@@ -2,7 +2,7 @@ local F, C = unpack(FreeUI)
 
 local top = C.menubar.topPosition
 
-local menuFrame = CreateFrame("Frame", "FreeUI_MicroMenu", UIParent, "Lib_UIDropDownMenuTemplate")
+local menuFrame = CreateFrame("Frame", "FreeUI_MicroMenu", UIParent, "DropDownMenuTemplate")
 
 local microMenu = {
 	{text = CHARACTER_BUTTON, notCheckable = true, func = function() ToggleCharacter("PaperDollFrame") end},

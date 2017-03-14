@@ -569,7 +569,7 @@ local function showContainerDropdown(self)
 	for i = 1, NUM_CONTAINER_FRAMES do
 		local frame = _G["ContainerFrame"..i]
 		if frame:GetID() == id then
-			Lib_ToggleDropDownMenu(1, nil, frame.FilterDropDown, self, 0, 0)
+			ToggleDropDownMenu(1, nil, frame.FilterDropDown, self, 0, 0)
 			return
 		end
 	end
@@ -672,7 +672,7 @@ do
 	icon:SetTexCoord(.08, .92, .08, .92)
 
 	addConfigIcon(mainBag, nil, function(self)
-		Lib_ToggleDropDownMenu(1, nil, ContainerFrame1.FilterDropDown, self, 0, 0)
+		ToggleDropDownMenu(1, nil, ContainerFrame1.FilterDropDown, self, 0, 0)
 	end)
 
 	F.CreateBG(mainBag)

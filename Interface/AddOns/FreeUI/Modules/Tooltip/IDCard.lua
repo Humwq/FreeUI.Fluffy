@@ -33,7 +33,7 @@ end
 
 local cleared = hookfactory(function(b,self)
     b:SetNormalTexture(nil)
-	b.achOverlay:Hide()
+	-- b.achOverlay:Hide()
 	b.type = nil
 	b.link = nil
 end,"cleared")
@@ -44,7 +44,7 @@ local setHyperlink = hookfactory(function(b,self,link)
 	if linkType == "achievement" and id then
 		b.link = GetAchievementLink(id)
 		b:SetNormalTexture(select(10,GetAchievementInfo(id)))
-		b.achOverlay:Show()
+		-- b.achOverlay:Show()
 		b.type = "achievement"
 	elseif linkType == "spell" and id then
 		b.link = GetSpellLink(id)
@@ -76,21 +76,23 @@ function IDCard:RegisterTooltip(tooltip)
 	local b = CreateFrame("Button",nil,tooltip)
     b:SetWidth(37)
     b:SetHeight(37)
-    b:SetPoint("TOPRIGHT",tooltip,"TOPLEFT",0,-3)
+    b:SetPoint("TOPRIGHT",tooltip,"TOPLEFT",-2,-2)
     b:SetScript("OnDragStart",dragstart)
     b:SetScript("OnDragStop",dragstop)
     b:SetScript("OnClick",click)
     b:RegisterForDrag("LeftButton")
     reg.button = b
+
+    F.CreateSD(b)
 	
-	local t = b:CreateTexture(nil,"OVERLAY")
-	t:SetTexture("Interface\\AchievementFrame\\UI-Achievement-IconFrame")
-	t:SetTexCoord(0,0.5625,0,0.5625)
-	t:SetPoint("CENTER",0,0)
-	t:SetWidth(47)
-	t:SetHeight(47)	
-	t:Hide()
-	b.achOverlay = t
+	-- local t = b:CreateTexture(nil,"OVERLAY")
+	-- t:SetTexture("Interface\\AchievementFrame\\UI-Achievement-IconFrame")
+	-- t:SetTexCoord(0,0.5625,0,0.5625)
+	-- t:SetPoint("CENTER",0,0)
+	-- t:SetWidth(47)
+	-- t:SetHeight(47)	
+	-- t:Hide()
+	-- b.achOverlay = t
 		
     reg.setItem = tooltip:GetScript("OnTooltipSetItem")
     reg.cleared = tooltip:GetScript("OnTooltipCleared")

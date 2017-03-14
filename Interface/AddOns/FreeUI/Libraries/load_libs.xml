@@ -9,8 +9,6 @@
 	<Script file="rLib\core.lua"/>
 	<Script file="rLib\framefader.lua"/>
 	<Script file="Fixes\Taint.lua"/>
-	<Script file="Fixes\DropdownMenu\EasyMenu.lua"/>
-	<Include file="Fixes\DropdownMenu\UIDropDownMenu.xml"/>
 
 	<Script file="SharedMedia.lua"/>
 </Ui>

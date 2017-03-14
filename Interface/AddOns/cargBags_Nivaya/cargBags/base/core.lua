@@ -18,33 +18,27 @@
 	Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 	class-generation, helper-functions and the Blizzard-replacement.
 ]]
-local ADDON_NAME, ns = ...
-
--- Lua Globals --
-local _G = _G
-local next = _G.next
+local parent, ns = ...
+local global = GetAddOnMetadata(parent, 'X-cargBags')
 
 --- @class table
 --  @name cargBags
 --  This class provides the underlying fundamental functions, such as
 --  class-generation, helper-functions and the Blizzard-replacement
-local cargBags = _G.CreateFrame("Button")
-ns.cargBags = cargBags
+local cargBags = CreateFrame("Button")
 
-local global = _G.GetAddOnMetadata(ADDON_NAME, 'X-cargBags')
-if global then
+ns.cargBags = cargBags
+if(global) then
 	_G[global] = cargBags
 end
 
 cargBags.classes = {} --- <table> Holds all classes by their name
 cargBags.itemKeys = {} --- <table> Holds all ItemKeys by their name
 
-local widgets = _G.setmetatable({}, {
-	__index = function(self, widget)
-		self[widget] = _G.getmetatable(_G.CreateFrame(widget))
-		return self[widget]
-	end
-})
+local widgets = setmetatable({}, {__index = function(self, widget)
+	self[widget] = getmetatable(CreateFrame(widget))
+	return self[widget]
+end})
 
 --- Creates a new class
 --  @param name <string> The name of the class
@@ -52,9 +46,9 @@ local widgets = _G.setmetatable({}, {
 --  @param widget <string> The widget type of the class
 --  @return class <table> The prototype of the class
 function cargBags:NewClass(name, parent, widget)
-	if self.classes[name] then return end
+	if(self.classes[name]) then return end
 	parent = parent and self.classes[parent]
-	local class = _G.setmetatable({}, parent or (widget and widgets[widget]))
+	local class = setmetatable({}, parent or (widget and widgets[widget]))
 	class.__index = class
 	class._parent = parent
 	self.classes[name] = class
@@ -75,28 +69,28 @@ function cargBags:GetImplementation(name)
 	return self.classes.Implementation:Get(name)
 end
 
-local function toggleBag(forceopen) cargBags.blizzard:Toggle(forceopen) end
-local function toggleNoForce()      cargBags.blizzard:Toggle()          end
-local function openBag()            cargBags.blizzard:Show()            end -- luacheck: ignore
-local function closeBag()           cargBags.blizzard:Hide()            end
+local function toggleBag(forceopen)	cargBags.blizzard:Toggle(forceopen)	end
+local function toggleNoForce()		cargBags.blizzard:Toggle()			end
+local function openBag()				cargBags.blizzard:Show()			end
+local function closeBag()				cargBags.blizzard:Hide()			end
 
 --- Overwrites Blizzards Bag-Toggle-Functions with the implementation's ones
 --  @param name <string> The name of the implementation [optional]
 function cargBags:ReplaceBlizzard(name)
-	local impl = name and cargBags:GetImplementation(name) or self.blizzard
+	local impl = arg1 and cargBags:GetImplementation(name) or self.blizzard
 	self.blizzard = impl
 
 	-- Can we maybe live without hooking ToggleBag(id)?
-	_G.ToggleAllBags = toggleNoForce
-	_G.ToggleBag = toggleNoForce
-	_G.ToggleBackpack = toggleNoForce
+	ToggleAllBags = toggleNoForce
+	ToggleBag = toggleNoForce
+	ToggleBackpack = toggleNoForce
 
-	_G.OpenAllBags = toggleBag -- Name is misleading, Blizz-function actually toggles bags
-	_G.OpenBackpack = toggleBag -- Blizz does not provide toggling here
-	_G.CloseAllBags = closeBag
-	_G.CloseBackpack = closeBag
+	OpenAllBags = toggleBag	-- Name is misleading, Blizz-function actually toggles bags
+	OpenBackpack = toggleBag -- Blizz does not provide toggling here
+	CloseAllBags = closeBag
+	CloseBackpack = closeBag
 
-	_G.BankFrame:UnregisterAllEvents()
+	BankFrame:UnregisterAllEvents()
 end
 
 --- Flags the implementation to handle Blizzards Bag-Toggle-Functions
@@ -104,7 +98,7 @@ end
 function cargBags:RegisterBlizzard(implementation)
 	self.blizzard = implementation
 
-	if _G.IsLoggedIn() then
+	if(IsLoggedIn()) then
 		self:ReplaceBlizzard(self.blizzard)
 	else
 		self:RegisterEvent("PLAYER_LOGIN")
@@ -116,8 +110,8 @@ end
 --  @param event <string> the name of the event [default: "BAG_UPDATE"]
 --  @param ... arguments of the event [optional]
 function cargBags:FireEvent(force, event, ...)
-	for name, impl in next, self.classes.Implementation.instances do
-		if force or impl:IsShown() then
+	for name, impl in pairs(self.classes.Implementation.instances) do
+		if(force or impl:IsShown()) then
 			impl:OnEvent(event or "BAG_UPDATE", ...)
 		end
 	end
@@ -127,52 +121,48 @@ cargBags:RegisterEvent("BANKFRAME_OPENED")
 cargBags:RegisterEvent("BANKFRAME_CLOSED")
 
 cargBags:SetScript("OnEvent", function(self, event)
-	if not self.blizzard then return end
+	if(not self.blizzard) then return end
 
 	local impl = self.blizzard
 
-	if event == "PLAYER_LOGIN" then
+	if(event == "PLAYER_LOGIN") then
 		self:ReplaceBlizzard(impl)
-	elseif event == "BANKFRAME_OPENED" then
+	elseif(event == "BANKFRAME_OPENED") then
 		self.atBank = true
 
-		if impl:IsShown() then
-			impl:UpdateAll()
+		if(impl:IsShown()) then
+			impl:OnEvent("BAG_UPDATE")
 		else
 			impl:Show()
 		end
 
-		if impl.OnBankOpened then
+		if(impl.OnBankOpened) then
 			impl:OnBankOpened()
 		end
-	elseif event == "BANKFRAME_CLOSED" then
+	elseif(event == "BANKFRAME_CLOSED") then
 		self.atBank = nil
 
-		if impl:IsShown() then
+		if(impl:IsShown()) then
 			impl:Hide()
 		end
 
-		if impl.OnBankClosed then
+		if(impl.OnBankClosed) then
 			impl:OnBankClosed()
 		end
 	end
 end)
 
-local handlerFuncs = _G.setmetatable({}, {
-	__index = function(self, handler)
-		self[handler] = function(this, ...)
-			return this[handler] and this[handler](this, ...)
-		end
-		return self[handler]
-	end
-})
+local handlerFuncs = setmetatable({}, {__index=function(self, handler)
+	self[handler] = function(self, ...) return self[handler] and self[handler](self, ...) end
+	return self[handler]
+end})
 
 --- Sets a number of script handlers by redirecting them to the members function, e.g. self:OnEvent(self, ...)
 --  @param self <frame>
 --  @param ... <string> A number of script handlers
 function cargBags.SetScriptHandlers(self, ...)
-	for i = 1, _G.select("#", ...) do
-		local handler = _G.select(i, ...)
+	for i=1, select("#", ...) do
+		local handler = select(i, ...)
 		self:SetScript(handler, handlerFuncs[handler])
 	end
 end
@@ -182,7 +172,7 @@ end
 --  @param slotID <number>
 --  @return bagSlot <number>
 function cargBags.ToBagSlot(bagID, slotID)
-	return bagID * 100 + slotID
+	return bagID*100+slotID
 end
 
 
@@ -191,15 +181,13 @@ end
 --  @return bagID <number>
 --  @return bagSlot <number>
 function cargBags.FromBagSlot(bagSlot)
-	return _G.floor(bagSlot / 100), bagSlot % 100
+	return floor(bagSlot/100), bagSlot % 100
 end
 
 --- Creates a new item table which has access to ItemKeys
 --  @return itemTable <table>
-local m_item = {__index = function(i,k)
-	return cargBags.itemKeys[k] and cargBags.itemKeys[k](i,k)
-end}
+local m_item = {__index = function(i,k) return cargBags.itemKeys[k] and cargBags.itemKeys[k](i,k) end}
 function cargBags:NewItemTable()
-	return _G.setmetatable({}, m_item)
+	return setmetatable({}, m_item)
 end
 

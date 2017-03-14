@@ -17,10 +17,9 @@
 	along with cargBags; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 ]]
-local _, ns = ...
+local addon, ns = ...
 local cargBags = ns.cargBags
 
--- Lua Globals --
 local _G = _G
 
 --[[!
@@ -32,27 +31,15 @@ local ItemButton = cargBags:NewClass("ItemButton", nil, "Button")
 --[[!
 	Gets a template name for the bagID
 	@param bagID <number> [optional]
-	@return template <string> - The template to be used for the bag
-	@return parent <frame> - The parent container frame
+	@return tpl <string>
 ]]
 function ItemButton:GetTemplate(bagID)
 	bagID = bagID or self.bagID
+	return (bagID == -3 and "ReagentBankItemButtonGenericTemplate") or (bagID == -1 and "BankItemButtonGenericTemplate") or (bagID and "ContainerFrameItemButtonTemplate") or "ItemButtonTemplate",
+      (bagID == -3 and ReagentBankFrame) or (bagID == -1 and BankFrame) or (bagID and _G["ContainerFrame"..bagID + 1]) or "ItemButtonTemplate";
+end 
 
-	if bagID == -3 then
-		return "ReagentBankItemButtonGenericTemplate", _G.ReagentBankFrame
-	elseif bagID == -1 then
-		return "BankItemButtonGenericTemplate", _G.BankFrame
-	elseif bagID then
-		return "ContainerFrameItemButtonTemplate", _G["ContainerFrame"..bagID + 1]
-	else
-		return "ItemButtonTemplate"
-	end
-end
-
-local mt_gen_key = {__index = function(self,k)
-	self[k] = {}
-	return self[k]
-end}
+local mt_gen_key = {__index = function(self,k) self[k] = {}; return self[k]; end}
 
 --[[!
 	Fetches a new instance of the ItemButton, creating one if necessary
@@ -61,10 +48,10 @@ end}
 	@return button <ItemButton>
 ]]
 function ItemButton:New(bagID, slotID)
-	self.recycled = self.recycled or _G.setmetatable({}, mt_gen_key)
+	self.recycled = self.recycled or setmetatable({}, mt_gen_key)
 
 	local tpl, parent = self:GetTemplate(bagID)
-	local button = _G.tremove(self.recycled[tpl]) or self:Create(tpl, parent)
+	local button = table.remove(self.recycled[tpl]) or self:Create(tpl, parent)
 
 	button.bagID = bagID
 	button.slotID = slotID
@@ -87,10 +74,10 @@ function ItemButton:Create(tpl, parent)
 	impl.numSlots = (impl.numSlots or 0) + 1
 	local name = ("%sSlot%d"):format(impl.name, impl.numSlots)
 
-	local button = _G.setmetatable(_G.CreateFrame("Button", name, parent, tpl), self.__index)
+	local button = setmetatable(CreateFrame("Button", name, parent, tpl), self.__index)
 
-	if button.Scaffold then button:Scaffold(tpl) end
-	if button.OnCreate then button:OnCreate(tpl) end
+	if(button.Scaffold) then button:Scaffold(tpl) end
+	if(button.OnCreate) then button:OnCreate(tpl) end
 	local btnNT = _G[button:GetName().."NormalTexture"]
 	local btnNIT = button.NewItemTexture
 	local btnBIT = button.BattlepayItemTexture
@@ -117,15 +104,15 @@ end
 ]]
 function ItemButton:Free()
 	self:Hide()
-	_G.tinsert(self.recycled[self:GetTemplate()], self)
+	table.insert(self.recycled[self:GetTemplate()], self)
 end
 
 --[[!
 	Fetches the item-info of the button, just a small wrapper for comfort
+	@param item <table> [optional]
 	@return item <table>
 ]]
-function ItemButton:GetItemInfo()
-	--print("ItemButton:GetItemInfo", bagID)
-	return self.implementation:GetItemInfo(self.bagID, self.slotID)
+function ItemButton:GetItemInfo(item)
+	return self.implementation:GetItemInfo(self.bagID, self.slotID, item)
 end
 

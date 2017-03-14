@@ -20,18 +20,14 @@
 local _, ns = ...
 local cargBags = ns.cargBags
 
--- Lua Globals --
-local _G = _G
-local next, ipairs = _G.next, _G.ipairs
-
 --[[!
 	@class Container
 		The container class provides the virtual bags for cargBags
 ]]
 local Container = cargBags:NewClass("Container", nil, "Button")
 
-local mt_bags = {__index = function(self, bagID)
-	self[bagID] = _G.CreateFrame("Frame", nil, self.container)
+local mt_bags = {__index=function(self, bagID)
+	self[bagID] = CreateFrame("Frame", nil, self.container)
 	self[bagID]:SetID(bagID)
 	return self[bagID]
 end}
@@ -45,19 +41,19 @@ end}
 ]]
 function Container:New(name, ...)
 	local implName = self.implementation.name
-	local container = _G.setmetatable(_G.CreateFrame("Button", implName..name), self.__index)
+	local container = setmetatable(CreateFrame("Button", implName..name), self.__index)
 
 	container.name = name
 	container.buttons = {}
-	container.bags = _G.setmetatable({container = container}, mt_bags)
+	container.bags = setmetatable({container = container}, mt_bags)
 	container:ScheduleContentCallback()
 
 	container.implementation.contByName[name] = container -- Make this into pretty function?
-	_G.tinsert(container.implementation.contByID, container)
+	table.insert(container.implementation.contByID, container)
 
 	container:SetParent(self.implementation)
 
-	if container.OnCreate then container:OnCreate(name, ...) end
+	if(container.OnCreate) then container:OnCreate(name, ...) end
 
 	return container
 end
@@ -72,9 +68,9 @@ function Container:AddButton(button)
 	button.container = self
 	button:SetParent(self.bags[button.bagID])
 	self:ScheduleContentCallback()
-	_G.tinsert(self.buttons, button)
-	if button.OnAdd then button:OnAdd(self) end
-	if self.OnButtonAdd then self:OnButtonAdd(button) end
+	table.insert(self.buttons, button)
+	if(button.OnAdd) then button:OnAdd(self) end
+	if(self.OnButtonAdd) then self:OnButtonAdd(button) end
 end
 
 --[[!
@@ -85,12 +81,12 @@ end
 ]]
 function Container:RemoveButton(button)
 	for i, single in ipairs(self.buttons) do
-		if button == single then
+		if(button == single) then
 			self:ScheduleContentCallback()
 			button.container = nil
-			if button.OnRemove then button:OnRemove(self) end
-			if self.OnButtonRemove then self:OnButtonRemove(button) end
-			return _G.tremove(self.buttons, i)
+			if(button.OnRemove) then button:OnRemove(self) end
+			if(self.OnButtonRemove) then self:OnButtonRemove(button) end
+			return table.remove(self.buttons, i)
 		end
 	end
 end
@@ -98,11 +94,11 @@ end
 --[[
 	@callback OnContentsChanged()
 ]]
-local updater, scheduled = _G.CreateFrame"Frame", {}
+local updater, scheduled = CreateFrame"Frame", {}
 updater:Hide()
 updater:SetScript("OnUpdate", function(self)
 	self:Hide()
-	for container in next, scheduled do
+	for container in pairs(scheduled) do
 		if(container.OnContentsChanged) then container:OnContentsChanged() end
 		scheduled[container] = nil
 	end
@@ -122,7 +118,7 @@ end
 	@param ... Arguments which are passed to the function
 ]]
 function Container:ApplyToButtons(func, ...)
-	for i, button in next, self.buttons do
+	for i, button in pairs(self.buttons) do
 		func(button, ...)
 	end
 end

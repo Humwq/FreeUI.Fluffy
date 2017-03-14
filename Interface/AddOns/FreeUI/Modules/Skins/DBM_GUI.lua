@@ -103,6 +103,7 @@ C.themes["DBM-GUI"] = function()
 
 	F.CreateBD(_G.DBM_GUI_DropDown)
 	F.CreateBD(_G.DBM_GUI_OptionsFrame)
+	F.CreateSD(_G.DBM_GUI_OptionsFrame)
 	F.Reskin(_G.DBM_GUI_OptionsFrameWebsiteButton)
 	F.Reskin(_G.DBM_GUI_OptionsFrameOkay)
 	F.ReskinScroll(_G.DBM_GUI_OptionsFramePanelContainerFOVScrollBar)

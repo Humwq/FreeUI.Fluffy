@@ -1,8 +1,6 @@
-﻿local addon, ns = ...
+local addon, ns = ...
 local cargBags = ns.cargBags
 
-local _G = _G
-local next, ipairs = _G.next, _G.ipairs
 local _
 local L = cBnivL
 
@@ -39,92 +37,42 @@ end
 local GetNumFreeSlots = function(bagType)
 	local free, max = 0, 0
 	if bagType == "bag" then
-		for i = 0, 4 do
-			free = free + _G.GetContainerNumFreeSlots(i)
-			max = max + _G.GetContainerNumSlots(i)
+		for i = 0,4 do
+			free = free + GetContainerNumFreeSlots(i)
+			max = max + GetContainerNumSlots(i)
 		end
 	elseif bagType == "bankReagent" then
-		free = _G.GetContainerNumFreeSlots(-3)
-		max = _G.GetContainerNumSlots(-3)
+		free = GetContainerNumFreeSlots(-3)
+		max = GetContainerNumSlots(-3)
 	else
 		local containerIDs = {-1,5,6,7,8,9,10,11}
-		for _, i in next, containerIDs do    
-			free = free + _G.GetContainerNumFreeSlots(i)
-			max = max + _G.GetContainerNumSlots(i)
+		for _,i in next, containerIDs do	
+			free = free + GetContainerNumFreeSlots(i)
+			max = max + GetContainerNumSlots(i)
 		end
 	end
 	return free, max
 end
 
-local QuickSort, invTypes
+local QuickSort;
 do
-	invTypes = {
-		INVTYPE_HEAD        = 1,
-		INVTYPE_NECK        = 2,
-		INVTYPE_SHOULDER    = 3,
-		INVTYPE_CLOAK       = 4,
-		INVTYPE_CHEST       = 5,
-		INVTYPE_ROBE        = 5, -- Holiday chest
-		INVTYPE_BODY        = 6, -- Shirt
-		INVTYPE_TABARD      = 7,
-		INVTYPE_WRIST       = 8,
-		INVTYPE_HAND        = 9,
-		INVTYPE_WAIST       = 10,
-		INVTYPE_LEGS        = 11,
-		INVTYPE_FEET        = 12,
-		INVTYPE_FINGER      = 13,
-		INVTYPE_TRINKET     = 14,
-
-		INVTYPE_2HWEAPON    = 15,
-		INVTYPE_RANGED      = 16, -- Bows
-		INVTYPE_RANGEDRIGHT = 16, -- Wands, Guns, and Crossbows
-
-		INVTYPE_WEAPON      = 17, -- One-Hand
-		INVTYPE_WEAPONMAINHAND = 18,
-		INVTYPE_WEAPONOFFHAND = 19,
-		INVTYPE_SHIELD      = 20,
-		INVTYPE_HOLDABLE    = 21,
-
-		INVTYPE_BAG         = 25
-	}
 	local func = function(v1, v2)
-		local item1, item2 = v1[1], v2[1]
-		if (item1 == nil) or (item2 == nil) then return not not item1 end
-
-		-- higher quality first
-		if item1.rarity ~= item2.rarity then
-			if item1.rarity and item2.rarity then
-				return item1.rarity > item2.rarity
-			elseif (item1.rarity == nil) or (item2.rarity == nil) then
-				return not not item1.rarity
+		if (v1 == nil) or (v2 == nil) then return (v1 and true or false) end
+		if v1[1] == -1 or v2[1] == -1 then
+			return v1[1] > v2[1] -- empty slots last
+		elseif v1[2] ~= v2[2] then
+			if v1[2] and v2[2] then
+				return v1[2] > v2[2] -- higher quality first
+			elseif (v1[2] == nil) or (v2[2] == nil) then
+				return (v1[2] and true or false)
 			else
 				return false
 			end
+		elseif v1[1] ~= v2[1] then
+			return v1[1] > v2[1] -- group identical item ids
+		else
+			return v1[4] > v2[4] -- full/larger stacks first
 		end
-
-		-- group item types
-		if item1.typeID ~= item2.typeID then
-			return item1.typeID > item2.typeID
-		elseif item1.subTypeID ~= item2.subTypeID then
-			return item1.subTypeID > item2.subTypeID
-		end
-
-		-- group equipment types
-		if (item1.equipLoc ~= "" and item2.equipLoc ~= "") and (item1.equipLoc ~= item2.equipLoc) then
-			if not invTypes[item1.equipLoc] or not invTypes[item2.equipLoc] then
-				--print(item1.link, item1.equipLoc, item2.link, item2.equipLoc)
-			else
-				return invTypes[item1.equipLoc] < invTypes[item2.equipLoc]
-			end
-		end
-
-		-- group same items
-		if item1.id ~= item2.id then
-			return item1.id > item2.id
-		end
-
-		-- sort larger stacks first
-		return item1.count > item2.count
 	end;
 	QuickSort = function(tbl) table.sort(tbl, func) end
 end
@@ -136,50 +84,30 @@ function MyContainer:OnContentsChanged()
 	local isEmpty = true
 
 	local tName = self.name
-	--local tBankBags = tName:find("cBniv_Bank%a+") 
-	local tBankBags = string.find(tName, "Bank")
+	local tBankBags = string.find(tName, "cBniv_Bank%a+")
 	local tBank = tBankBags or (tName == "cBniv_Bank")
 	local tReagent = (tName == "cBniv_BankReagent")
 
 	local buttonIDs = {}
-	for i, button in next, self.buttons do
-		local item = cbNivaya:GetItemInfo(button.bagID, button.slotID, true)
+  	for i, button in pairs(self.buttons) do
+		local item = cbNivaya:GetItemInfo(button.bagID, button.slotID)
 		if item.link then
-			if item.equipLoc ~= "" and not invTypes[item.equipLoc] then
-				--print(item.link, item.equipLoc)
-			end
-			buttonIDs[i] = { item, button }
+			buttonIDs[i] = { item.id, item.rarity, button, item.count }
 		else
-			buttonIDs[i] = { nil, button }
+			buttonIDs[i] = { -1, -2, button, -1 }
 		end
 	end
-	if ((tBank or tReagent) and cBnivCfg.SortBank) or (not (tBank or tReagent) and cBnivCfg.SortBags) then QuickSort(buttonIDs)  end
-	--print(self.name)
-	local numSlotsBag = {GetNumFreeSlots("bag")}
-	local numSlotsBank = {GetNumFreeSlots("bank")}
-	local numSlotsReagent = {GetNumFreeSlots("bankReagent")}
-	
-	local usedSlotsBag = numSlotsBag[2] - numSlotsBag[1]
-	local usedSlotsBank = numSlotsBank[2] - numSlotsBank[1]
-	local usedSlotsReagent = numSlotsReagent[2] - numSlotsReagent[1]
-	
-	if (tBank or tBankBags or tReagent) then
-		self.Columns = (usedSlotsBank > ns.options.sizes.bank.largeItemCount) and ns.options.sizes.bank.columnsLarge or ns.options.sizes.bank.columnsSmall
-	else
-		self.Columns = (usedSlotsBag > ns.options.sizes.bags.largeItemCount) and ns.options.sizes.bags.columnsLarge or ns.options.sizes.bags.columnsSmall
-	end
-	--print(self.Columns)
-	self:SetWidth((itemSlotSize + 2) * self.Columns + 2)
+	if ((tBank or tReagent) and cBnivCfg.SortBank) or (not (tBank or tReagent) and cBnivCfg.SortBags) then QuickSort(buttonIDs) end
 
-	for _, v in ipairs(buttonIDs) do
-		local button = v[2]
+	for _,v in ipairs(buttonIDs) do
+		local button = v[3]
 		button:ClearAllPoints()
 	  
 		local xPos = col * (itemSlotSize + 2) + 2
 		local yPos = (-1 * row * (itemSlotSize + 2)) - yPosOffs
 
 		button:SetPoint("TOPLEFT", self, "TOPLEFT", xPos, yPos)
-		if col >= (self.Columns - 1) then
+		if(col >= self.Columns-1) then
 			col = 0
 			row = row + 1
 		else
@@ -196,7 +124,7 @@ function MyContainer:OnContentsChanged()
 		if tDrop then
 			tDrop:ClearAllPoints()
 			tDrop:SetPoint("TOPLEFT", self, "TOPLEFT", xPos, yPos)
-			if col >= (self.Columns - 1) then
+			if(col >= self.Columns-1) then
 				col = 0
 				row = row + 1
 			else
@@ -262,7 +190,7 @@ local function SellJunk()
 	
 	if Profit > 0 then
 		local g, s, c = math.floor(Profit / 10000) or 0, math.floor((Profit % 10000) / 100) or 0, Profit % 100
-		print(L['Vendor trash sold: '].."|cff00a956+|r |cffffffff"..g.."\124TInterface\\MoneyFrame\\UI-GoldIcon:0:0:2:0\124t "..s.."\124TInterface\\MoneyFrame\\UI-SilverIcon:0:0:2:0\124t "..c.."\124TInterface\\MoneyFrame\\UI-CopperIcon:0:0:2:0\124t".."|r")
+		print("Vendor trash sold: |cff00a956+|r |cffffffff"..g.."\124TInterface\\MoneyFrame\\UI-GoldIcon:0:0:2:0\124t "..s.."\124TInterface\\MoneyFrame\\UI-SilverIcon:0:0:2:0\124t "..c.."\124TInterface\\MoneyFrame\\UI-CopperIcon:0:0:2:0\124t".."|r")
 	end
 end
 JS:SetScript("OnEvent", function() SellJunk() end)
@@ -273,42 +201,34 @@ local restackItems = function(self)
 	--local loc = tBank and "bank" or "bags"
 	if tBank then
 		SortBankBags()
-		--cB_Bags.bank:OnContentsChanged()
-		cB_Bags.bankReagent:OnContentsChanged()
-		--SortReagentBankBags()
+		SortReagentBankBags()
 	elseif tBag then
 		SortBags()
-		--cB_Bags.main:OnContentsChanged()
 	end
 end
 
 -- Reset New
 local resetNewItems = function(self)
-	if not cBniv.clean then
-		for item, numItem in next, cB_KnownItems do
-			if type(item) == "string" then
-				cB_KnownItems[item] = nil
-			end
-		end
-		cBniv.clean = true
-	end
+	cB_KnownItems = cB_KnownItems or {}
 	for bag = 0, 4 do
 		local tNumSlots = GetContainerNumSlots(bag)
 		if tNumSlots > 0 then
 			for slot = 1, tNumSlots do
 				local item = cbNivaya:GetItemInfo(bag, slot)
-			   -- print("resetNewItems", item.id)
-				if item.id then
-					if cB_KnownItems[item.id] then
-						cB_KnownItems[item.id] = cB_KnownItems[item.id] + (item.stackCount and item.stackCount or 0)
-					else
-						cB_KnownItems[item.id] = item.stackCount and item.stackCount or 0
-					end
+				--print("resetNewItems", item.id)
+				item.id = item.id or 0
+				if cB_KnownItems[item.id] then
+					cB_KnownItems[item.id] = cB_KnownItems[item.id] + (item.stackCount and item.stackCount or 0)
+				else
+					cB_KnownItems[item.id] = item.stackCount and item.stackCount or 0
 				end
 			end 
 		end
 	end
 	cbNivaya:UpdateBags()
+end
+function cbNivResetNew()
+	resetNewItems()
 end
 
 local UpdateDimensions = function(self)
@@ -507,7 +427,13 @@ function MyContainer:OnCreate(name, settings)
 	local tBag, tBank, tReagent = (name == "cBniv_Bag"), (name == "cBniv_Bank"), (name == "cBniv_BankReagent")
 	local tBankBags = string.find(name, "Bank")
 
+	local numSlotsBag = {GetNumFreeSlots("bag")}
+	local numSlotsBank = {GetNumFreeSlots("bank")}
+	local numSlotsReagent = {GetNumFreeSlots("bankReagent")}
 	
+	local usedSlotsBag = numSlotsBag[2] - numSlotsBag[1]
+	local usedSlotsBank = numSlotsBank[2] - numSlotsBank[1]
+	local usedSlotsReagent = numSlotsReagent[2] - numSlotsReagent[1]
 
 	self:EnableMouse(true)
 	
@@ -520,10 +446,16 @@ function MyContainer:OnCreate(name, settings)
 		SetFrameMovable(self, cBnivCfg.Unlocked) 
 	end
 
-	
+	if (tBank or tBankBags) then
+		self.Columns = (usedSlotsBank > ns.options.sizes.bank.largeItemCount) and ns.options.sizes.bank.columnsLarge or ns.options.sizes.bank.columnsSmall
+	elseif (tReagent) then
+		self.Columns = (usedSlotsReagent > ns.options.sizes.bank.largeItemCount) and ns.options.sizes.bank.columnsLarge or ns.options.sizes.bank.columnsSmall
+	else
+		self.Columns = (usedSlotsBag > ns.options.sizes.bags.largeItemCount) and ns.options.sizes.bags.columnsLarge or ns.options.sizes.bags.columnsSmall
+	end
 	self.ContainerHeight = 0
 	self:UpdateDimensions()
-
+	self:SetWidth((itemSlotSize + 2) * self.Columns + 2)
 
 	-- The frame background
 	local tBankCustom = (tBankBags and not cBnivCfg.BankBlack)
@@ -557,7 +489,6 @@ function MyContainer:OnCreate(name, settings)
 
 	-- Caption, close button
 	local caption = background:CreateFontString(background, "OVERLAY", nil)
-
 	if FreeUI then
 		local F, C, L = unpack(FreeUI)
 		local locale = GetLocale()
@@ -653,7 +584,7 @@ function MyContainer:OnCreate(name, settings)
 	end
 		
 	local tBtnOffs = 0
-	if (tBag or tBank) then
+  	if (tBag or tBank) then
 		-- Bag bar for changing bags
 		local bagType = tBag and "bags" or "bank"
 		
@@ -672,31 +603,31 @@ function MyContainer:OnCreate(name, settings)
 		self.BagBar = bagButtons
 		
 		-- We don't need the bag bar every time, so let's create a toggle button for them to show
-		self.bagToggle = createIconButton("Bags", self, Textures.BagToggle, "BOTTOMRIGHT", L['Toggle Bags'], tBag)
+		self.bagToggle = createIconButton("Bags", self, Textures.BagToggle, "BOTTOMRIGHT", "Toggle Bags", tBag)
 		self.bagToggle:SetPoint("BOTTOMRIGHT", self, "BOTTOMRIGHT", 0, 0)
 		self.bagToggle:SetScript("OnClick", function()
 			if(self.BagBar:IsShown()) then 
 				self.BagBar:Hide()
-				if self.hint then self.hint:Show() end
-				self.hintShown = true
+			--	if self.hint then self.hint:Show() end
+			--	self.hintShown = true
 			else
 				self.BagBar:Show()
-				if self.hint then self.hint:Hide() end
-				self.hintShown = false
+			--	if self.hint then self.hint:Hide() end
+			--	self.hintShown = false
 			end
 			self:UpdateDimensions()
 		end)
 
 		-- Button to reset new items:
 		if tBag and cBnivCfg.NewItems then
-			self.resetBtn = createIconButton("ResetNew", self, Textures.ResetNew, "BOTTOMRIGHT", L['Reset New'], tBag)
+			self.resetBtn = createIconButton("ResetNew", self, Textures.ResetNew, "BOTTOMRIGHT", "Reset New", tBag)
 			self.resetBtn:SetPoint("BOTTOMRIGHT", self.bagToggle, "BOTTOMLEFT", 0, 0)
 			self.resetBtn:SetScript("OnClick", function() resetNewItems(self) end)
 		end
 		
 		-- Button to restack items:
 		if cBnivCfg.Restack then
-			self.restackBtn = createIconButton("Restack", self, Textures.Restack, "BOTTOMRIGHT", L['Restack'], tBag)
+			self.restackBtn = createIconButton("Restack", self, Textures.Restack, "BOTTOMRIGHT", "Restack", tBag)
 			if self.resetBtn then
 				self.restackBtn:SetPoint("BOTTOMRIGHT", self.resetBtn, "BOTTOMLEFT", 0, 0)
 			else
@@ -705,9 +636,8 @@ function MyContainer:OnCreate(name, settings)
 			self.restackBtn:SetScript("OnClick", function() restackItems(self) end)
 		end
 		
-		
 		-- Button to show /cbniv options:
-		self.optionsBtn = createIconButton("Options", self, Textures.Config, "BOTTOMRIGHT", L['Options'], tBag)
+		self.optionsBtn = createIconButton("Options", self, Textures.Config, "BOTTOMRIGHT", "Options", tBag)
 		if self.restackBtn then
 			self.optionsBtn:SetPoint("BOTTOMRIGHT", self.restackBtn, "BOTTOMLEFT", 0, 0)
 		elseif self.resetBtn then
@@ -722,7 +652,7 @@ function MyContainer:OnCreate(name, settings)
 		
 		-- Button to toggle Sell Junk:
 		if tBag then
-			local sjHint = cBnivCfg.SellJunk and L['Sell Junk '].."|cFF00FF00(on)|r" or L['Sell Junk '].."|cFFFF0000(off)|r"
+			local sjHint = cBnivCfg.SellJunk and "Sell Junk |cffd0d0d0(on)|r" or "Sell Junk |cffd0d0d0(off)|r"
 			self.junkBtn = createIconButton("SellJunk", self, Textures.SellJunk, "BOTTOMRIGHT", sjHint, tBag)
 			if self.optionsBtn then
 				self.junkBtn:SetPoint("BOTTOMRIGHT", self.optionsBtn, "BOTTOMLEFT", 0, 0)
@@ -736,9 +666,9 @@ function MyContainer:OnCreate(name, settings)
 			self.junkBtn:SetScript("OnClick", function() 
 				cBnivCfg.SellJunk = not(cBnivCfg.SellJunk)
 				if cBnivCfg.SellJunk then
-					self.junkBtn.tooltip:SetText(L['Sell Junk '].."|cFF00FF00(on)|r")
+					self.junkBtn.tooltip:SetText("Sell Junk |cffd0d0d0(on)|r")
 				else
-					self.junkBtn.tooltip:SetText(L['Sell Junk '].."|cFFFF0000(off)|r")
+					self.junkBtn.tooltip:SetText("Sell Junk |cffd0d0d0(off)|r")
 				end
 			end)
 		end
@@ -810,14 +740,12 @@ function MyContainer:OnCreate(name, settings)
 		self.DropTarget:SetScript("OnReceiveDrag", DropTargetProcessItem)
 		
 		local fs = self:CreateFontString(nil, "OVERLAY")
-		
 		if FreeUI then
 			local F = FreeUI[1]
 			F.SetFS(fs)
 		else
 			fs:SetFont(unpack(ns.options.fonts.standard))
 		end
-
 		fs:SetJustifyH("LEFT")
 		fs:SetPoint("BOTTOMRIGHT", self.DropTarget, "BOTTOMRIGHT", 1.5, 1.5)
 		self.EmptySlotCounter = fs
@@ -852,7 +780,6 @@ function MyContainer:OnCreate(name, settings)
 		-- Hint
 		self.hint = background:CreateFontString(nil, "OVERLAY", nil)
 		self.hint:SetPoint("BOTTOMLEFT", infoFrame, -0.5, 31.5)
-
 		if FreeUI then
 			local F, C, L = unpack(FreeUI)
 			local locale = GetLocale()
@@ -870,15 +797,12 @@ function MyContainer:OnCreate(name, settings)
 			self.hint:SetFont(unpack(ns.options.fonts.standard))
 		end
 		self.hint:SetTextColor(1, 1, 1, 0.4)
-		self.hint:SetText(L['Ctrl + Alt + Right Click an item to assign category'])
+		self.hint:SetText("Ctrl + Alt + Right Click an item to assign category")
 		self.hintShown = true
-		
-	
 		
 		-- The money display
 		local money = self:SpawnPlugin("TagDisplay", "[money]", self)
 		money:SetPoint("TOPRIGHT", self, -25.5, -2.5)
-
 		if FreeUI then
 			local F = FreeUI[1]
 			F.SetFS(money)

@@ -289,6 +289,10 @@ C.themes["Blizzard_TalentUI"] = function()
 	F.Reskin(_G.PlayerTalentFramePetSpecializationLearnButton)
 
 	-- PvP Talents
+
+	PlayerTalentFramePVPTalents.PortraitMouseOverFrame:SetAlpha(0)
+	PlayerTalentFramePVPTalents.PortraitBackground:SetAlpha(0)
+	PlayerTalentFramePVPTalents.SmallWreath:SetAlpha(0)
 	
 	-- PlayerTalentFramePVPTalents.XPBar.Frame:Hide()
 	

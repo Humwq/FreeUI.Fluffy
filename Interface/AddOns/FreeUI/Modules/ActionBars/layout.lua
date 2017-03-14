@@ -76,7 +76,6 @@ local bar1 = {
 	buttonMargin    = 4,
 	numCols         = 12,
 	startPoint      = "BOTTOMLEFT",
-	fader           = nil,
 }
 --create
 rActionBar:CreateActionBar1(A, bar1)
@@ -94,7 +93,6 @@ local bar2 = {
 	buttonMargin    = 4,
 	numCols         = 12,
 	startPoint      = "BOTTOMLEFT",
-	fader           = nil,
 }
 --create
 rActionBar:CreateActionBar2(A, bar2)
@@ -112,15 +110,6 @@ local bar3 = {
 	buttonMargin    = 4,
 	numCols         = 12,
 	startPoint      = "BOTTOMLEFT",
-	fader = {
-		fadeInAlpha = 1,
-		fadeInDuration = 0.3,
-		fadeInSmooth = "OUT",
-		fadeOutAlpha = 0,
-		fadeOutDuration = 0.3,
-		fadeOutSmooth = "OUT",
-		fadeOutDelay = 0,
-	},
 }
 --create
 rActionBar:CreateActionBar3(A, bar3)
@@ -130,19 +119,19 @@ rActionBar:CreateActionBar3(A, bar3)
 -----------------------------
 
 local bar4 = {
-	framePoint      = { "BOTTOMRIGHT", UIParent, "BOTTOMRIGHT", 0, 160 },
+	framePoint      = { "BOTTOMRIGHT", UIParent, "BOTTOMRIGHT", 0, 200 },
 	frameScale      = 1,
 	framePadding    = 4,
 	buttonWidth     = 26,
 	buttonHeight    = 26,
 	buttonMargin    = 4,
 	numCols         = 2,
-	startPoint      = "TOPRIGHT",
+	startPoint      = "BOTTOMRIGHT",
 	fader = {
 		fadeInAlpha = 1,
 		fadeInDuration = 0.3,
 		fadeInSmooth = "OUT",
-		fadeOutAlpha = 0.2,
+		fadeOutAlpha = .1,
 		fadeOutDuration = 0.3,
 		fadeOutSmooth = "OUT",
 		fadeOutDelay = 0,
@@ -165,7 +154,7 @@ local bar5 = {
 	numCols         = 1,
 	startPoint      = "TOPRIGHT",
 	fader           = nil,
-	frameVisibility = "hide"
+	frameVisibility = "hide",
 }
 --create
 rActionBar:CreateActionBar5(A, bar5)
@@ -221,11 +210,11 @@ rActionBar:CreatePetBar(A, petbar)
 -----------------------------
 
 local extrabar = {
-	framePoint      = { "BOTTOM", UIParent, "BOTTOM", 0, 180 },
+	framePoint      = { "BOTTOM", UIParent, "BOTTOM", 0, 240 },
 	frameScale      = 1,
 	framePadding    = 4,
-	buttonWidth     = 44,
-	buttonHeight    = 44,
+	buttonWidth     = 36,
+	buttonHeight    = 36,
 	buttonMargin    = 4,
 	numCols         = 1,
 	startPoint      = "BOTTOMLEFT",
@@ -239,7 +228,7 @@ rActionBar:CreateExtraBar(A, extrabar)
 -----------------------------
 
 local vehicleexitbar = {
-	framePoint      = { "BOTTOM", UIParent, "BOTTOM", 126, 254 },
+	framePoint      = C.actionbars.leaveVehicleButton,
 	frameScale      = 1,
 	framePadding    = 4,
 	buttonWidth     = 16,

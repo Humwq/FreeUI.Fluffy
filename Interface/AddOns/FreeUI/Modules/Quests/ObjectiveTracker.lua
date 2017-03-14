@@ -8,25 +8,34 @@ local r, g, b = C.classcolours[class].r, C.classcolours[class].g, C.classcolours
 local ot = ObjectiveTrackerFrame
 local BlocksFrame = ot.BlocksFrame
 
--- [[ Positioning ]]
+local otFont = C.fontCN.pixel
 
-local frame = CreateFrame("Frame", "ObjectiveTrackerAnchor", UIParent)
-frame:SetPoint(unpack(C.quests.position))
-frame:SetHeight(150)
-frame:SetWidth(260)
+local parent = CreateFrame("Frame", nil, UIParent)
+parent:SetFrameStrata("HIGH")
+RegisterStateDriver(parent, "visibility", "[petbattle] hide; show")
+local Mover = CreateFrame("Button", "ObjectiveTrackerAnchor", parent)
+Mover:SetPoint(unpack(C.quests.position))
+Mover:SetSize(22, 22)
+Mover.Icon = Mover:CreateTexture(nil, "ARTWORK")
+Mover.Icon:SetAllPoints()
+Mover.Icon:SetTexture("Interface\\WorldMap\\Gear_64")
+Mover.Icon:SetTexCoord(0, .5, 0, .5)
+Mover.Icon:SetAlpha(.2)
+Mover:SetHighlightTexture("Interface\\WorldMap\\Gear_64")
+Mover:GetHighlightTexture():SetTexCoord(0, .5, 0, .5)
+F.CreateGT(Mover, "Drag to move", "system")
+F.CreateMF(Mover)
 
-ObjectiveTrackerFrame:ClearAllPoints()
-ObjectiveTrackerFrame:SetPoint("TOPLEFT", frame, "TOPLEFT", 20, 0)
-ObjectiveTrackerFrame:SetHeight(C.quests.height)
 
-hooksecurefunc(ObjectiveTrackerFrame, "SetPoint", function(_, _, parent)
-	if parent ~= frame then
-		ObjectiveTrackerFrame:ClearAllPoints()
-		ObjectiveTrackerFrame:SetPoint("TOPLEFT", frame, "TOPLEFT", 20, 0)
+hooksecurefunc(ot, "SetPoint", function(_, _, parent)
+	if parent ~= Mover then
+		ot:ClearAllPoints()
+		ot:SetPoint("TOPRIGHT", Mover, "TOPLEFT", -5, 0)
+		ot:SetHeight(GetScreenHeight() - 400)
 	end
 end)
+hooksecurefunc("ObjectiveTracker_CheckAndHideHeader", function() Mover:SetShown(ot.HeaderMenu:IsShown()) end)
 
-OBJECTIVE_TRACKER_DOUBLE_LINE_HEIGHT = 30
 
 -- [[ Difficulty color for ObjectiveTrackerFrame lines ]]
 
@@ -65,7 +74,15 @@ end)
 
 -- Header
 
-ot.HeaderMenu.Title:SetFont(C.media.font.header, 16, "OUTLINE")
+if GetLocale() == "zhCN" or GetLocale() == "zhTW" then
+	if C.appearance.fontUseChinesePixelFont then
+		ot.HeaderMenu.Title:SetFont(unpack(otFont))
+	else
+		ot.HeaderMenu.Title:SetFont(C.media.font.header, 16, "OUTLINE")
+	end
+else
+	F.SetFS(ot.HeaderMenu.Title)
+end
 
 -- Minimize button
 
@@ -91,7 +108,11 @@ for _, headerName in pairs({"QuestHeader", "AchievementHeader", "ScenarioHeader"
 	local header = BlocksFrame[headerName]
 
 	if GetLocale() == "zhCN" or GetLocale() == "zhTW" then
-		header.Text:SetFont(C.media.font.header, 16, "OUTLINE")
+		if C.appearance.fontUseChinesePixelFont then
+			header.Text:SetFont(unpack(otFont))
+		else
+			header.Text:SetFont(C.media.font.header, 16, "OUTLINE")
+		end
 	else
 		F.SetFS(header.Text)
 	end
@@ -101,7 +122,11 @@ do
 	local header = BONUS_OBJECTIVE_TRACKER_MODULE.Header
 
 	if GetLocale() == "zhCN" or GetLocale() == "zhTW" then
-		header.Text:SetFont(C.media.font.header, 16, "OUTLINE")
+		if C.appearance.fontUseChinesePixelFont then
+			header.Text:SetFont(unpack(otFont))
+		else
+			header.Text:SetFont(C.media.font.header, 16, "OUTLINE")
+		end
 	else
 		F.SetFS(header.Text)
 	end
@@ -117,7 +142,11 @@ do
 	bg:SetPoint("BOTTOMLEFT", -30, -4)
 	bg:SetSize(210, 30)
 	if GetLocale() == "zhCN" or GetLocale() == "zhTW" then
-		header.Text:SetFont(C.media.font.header, 16, "OUTLINE")
+		if C.appearance.fontUseChinesePixelFont then
+			header.Text:SetFont(unpack(otFont))
+		else
+			header.Text:SetFont(C.media.font.header, 16, "OUTLINE")
+		end
 	else
 		F.SetFS(header.Text)
 	end
@@ -130,8 +159,13 @@ do
 	bg:SetVertexColor(r * 0.7, g * 0.7, b * 0.7)
 	bg:SetPoint("BOTTOMLEFT", -30, -4)
 	bg:SetSize(210, 30)
+
 	if GetLocale() == "zhCN" or GetLocale() == "zhTW" then
-		header_bonus.Text:SetFont(C.media.font.header, 16, "OUTLINE")
+		if C.appearance.fontUseChinesePixelFont then
+			header_bonus.Text:SetFont(unpack(otFont))
+		else
+			header_bonus.Text:SetFont(C.media.font.header, 16, "OUTLINE")
+		end
 	else
 		F.SetFS(header_bonus.Text)
 	end
@@ -140,7 +174,11 @@ end
 hooksecurefunc(DEFAULT_OBJECTIVE_TRACKER_MODULE, "SetBlockHeader", function(_, block)
 	if not block.headerStyled then
 		if GetLocale() == "zhCN" or GetLocale() == "zhTW" then
-			block.HeaderText:SetFont(C.media.font.normal, 13, "OUTLINE")
+			if C.appearance.fontUseChinesePixelFont then
+				block.HeaderText:SetFont(unpack(otFont))
+			else
+				block.HeaderText:SetFont(C.media.font.normal, 13, "OUTLINE")
+			end
 		else
 			F.SetFS(block.HeaderText)
 		end
@@ -151,7 +189,11 @@ end)
 hooksecurefunc(QUEST_TRACKER_MODULE, "SetBlockHeader", function(_, block)
 	if not block.headerStyled then
 		if GetLocale() == "zhCN" or GetLocale() == "zhTW" then
-			block.HeaderText:SetFont(C.media.font.normal, 13, "OUTLINE")
+			if C.appearance.fontUseChinesePixelFont then
+				block.HeaderText:SetFont(unpack(otFont))
+			else
+				block.HeaderText:SetFont(C.media.font.normal, 13, "OUTLINE")
+			end
 		else
 			F.SetFS(block.HeaderText)
 		end
@@ -241,7 +283,11 @@ hooksecurefunc("ObjectiveTracker_AddBlock", function(block)
 		for _, line in pairs(block.lines) do
 			if not line.styled then
 				if GetLocale() == "zhCN" or GetLocale() == "zhTW" then
-					line.Text:SetFont(C.media.font.normal, 12, "OUTLINE")
+					if C.appearance.fontUseChinesePixelFont then
+						line.Text:SetFont(unpack(otFont))
+					else
+						line.Text:SetFont(C.media.font.normal, 12, "OUTLINE")
+					end
 				else
 					F.SetFS(line.Text)
 				end

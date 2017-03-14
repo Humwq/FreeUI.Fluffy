@@ -31,18 +31,18 @@ DESCRIPTION
 local _, ns = ...
 local cargBags = ns.cargBags
 
--- Lua Globals --
-local _G = _G
+local Implementation = cargBags.classes.Implementation
+local Container = cargBags.classes.Container
 
 local bagStrings = {
-	["backpack"]        = { 0 },
-	["bags"]            = { 1, 2, 3, 4 },
-	["backpack+bags"]   = { 0, 1, 2, 3, 4, },
-	["bankframe"]       = { -1 },
-	["bankframe+bank"]  = { -1, 5, 6, 7, 8, 9, 10, 11 },
-	["bankreagent"]     = { -3 },
-	["bank"]            = { 5, 6, 7, 8, 9, 10, 11 },
-	["keyring"]         = { -2 },
+	["backpack"]		= { 0 },
+	["bags"]			= { 1, 2, 3, 4 },
+	["backpack+bags"]	= { 0, 1, 2, 3, 4, },
+	["bankframe"]		= { -1 },
+	["bankframe+bank"]	= { -1, 5, 6, 7, 8, 9, 10, 11 },
+	["bankreagent"]		= { -3 },
+	["bank"]			= { 5, 6, 7, 8, 9, 10, 11 },
+	["keyring"]			= { -2 },
 }
 cargBags.BagStrings = bagStrings
 
@@ -53,22 +53,19 @@ cargBags.BagStrings = bagStrings
 ]]
 function cargBags:ParseBags(bags)
 	--print("ParseBags", bags)
-	if _G.type(bags) == "table" then return bags end
-	if bagStrings[bags] then return bagStrings[bags] end
-
-	if bags then
-		local min, max = bags:match("(%d+)-(%d+)")
-		if min then
-			local t = {}
-			for i = min, max do
-				t[#t + 1] = i
-			end
-			bagStrings[bags] = t
-			return t
-		elseif _G.tonumber(bags) then
-			local t = {_G.tonumber(bags)}
-			bagStrings[bags] = t
-			return t
+	if(type(bags) == "table") then return bags end
+	if(bagStrings[bags]) then return bagStrings[bags] end
+	local min, max = bags and bags:match("(%d+)-(%d+)")
+	if(min) then
+		local t = {}
+		for i=min, max do
+			t[#t+1] = i
 		end
+		bagStrings[bags] = t
+		return t
+	elseif(tonumber(bags)) then
+		local t = {tonumber(bags)}
+		bagStrings[bags] = t
+		return t
 	end
 end

@@ -2,6 +2,38 @@ local F, C = unpack(select(2, ...))
 
 if not C.unitframes.enable then return end
 
+--[[ Element: Threat Icon
+
+ Handles updating and toggles visibility of current threat level icon.
+
+ Widget
+
+ Threat - A Texture used to display the current threat level.
+
+ Notes
+
+ This element updates by changing colors of the texture.
+
+ The default threat icon will be used if the UI widget is a texture and doesn't
+ have a texture or color defined.
+
+ Examples
+
+   -- Position and size
+   local Threat = self:CreateTexture(nil, 'OVERLAY')
+   Threat:SetSize(16, 16)
+   Threat:SetPoint('TOPRIGHT', self)
+   
+   -- Register it with oUF
+   self.Threat = Threat
+
+ Hooks
+
+ Override(self) - Used to completely override the internal update function.
+                  Removing the table key entry will make the element fall-back
+                  to its internal function again.
+]]
+
 local parent, ns = ...
 local oUF = ns.oUF
 
@@ -56,6 +88,7 @@ end
 local Disable = function(self)
 	local threat = self.Threat
 	if(threat) then
+		threat:Hide()
 		self:UnregisterEvent("UNIT_THREAT_SITUATION_UPDATE", Path)
 	end
 end

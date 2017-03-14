@@ -57,13 +57,15 @@ C["general"] = {
 	["undressButton"] = true, 		-- undress button on dressup frame
 	["cooldownpulse"] = true,
 	["flashCursor"] = true,
+	["bossBanner"] = false,
+	["talkingHead"] = false,
+	["alreadyKnown"] = true,
 }
 
 C["appearance"] = {
 	["colourScheme"] = 1,			-- 1 = class coloured, 2 = custom
 		["customColour"] = {r = 1, g = 1, b = 1},
 	["fontUseAlternativeFont"] = false,
-	["fontUseChinesePixelFont"] = false,
 	["fontSizeNormal"] = 8,
 	["fontSizeLarge"] = 16,
 	["fontOutline"] = true,
@@ -73,6 +75,9 @@ C["appearance"] = {
 	["fontColorFontRGB"] = {r = 247/255, g = 225/255, b =171/255},
 	["uiFader"] = false,
 	["ncShadow"] = true,
+
+	["errorUsePixelFont"] = false,
+	["objectiveTrackerUsePixelFont"] = false,
 }
 
 C["auras"] = {
@@ -108,25 +113,9 @@ C["announcements"] = {
 C["actionbars"] = {
 	["enable"] = true,					-- enable the action bars
 	["enableStyle"] = true,
-	["bar3Fold"] = false,
 	["hotKey"] = true, 				-- show hot keys on buttons
 	["macroName"] = true,					-- show macro name on buttons
-	["rightbars_mouseover"] = false, -- show right bars on mouseover (show/hide: use blizz option)
-	["stancebar_mouseover"] = false,
-	["petbar_mouseover"] = false,
-
-	["margin"] = 4,		-- button margin
-	["abbs"] = 30,		-- main bar button size
-	["abbs_r"] = 24,	-- right bar button size
-	["pbbs"] = 24,		-- pet bar button size
-	["sbbs"] = 24,		-- stance bar button size
-	["ebbs"] = 45,		-- extra button size
-
-	["mainbar_pos"] = { a1 = "BOTTOM", a2 = "BOTTOM", af = "UIParent", x = 0, y = 8 },		-- mainbar(bar1) position
-	["rightbar_pos"] = { a1 = "RIGHT", a2 = "RIGHT", af = "UIParent", x = -6, y = -200 },	-- rightbar(bar4) position
-	["extra_pos"] = { a1 = "CENTER", a2 = "CENTER", af = "UIParent", x = 0, y = 100 },
-
-	["vehicleexitbar_pos"] = { "LEFT", "oUF_FreePlayer", "RIGHT", 5, 0 },
+	["leaveVehicleButton"] = { "BOTTOM", UIParent, "BOTTOM", 113, 195 },
 }
 
 C["minimap"] = {
@@ -167,18 +156,16 @@ C["notifications"] = {
 
 C["tooltip"] = {
 	["enable"] = true,		-- enable tooltip and modules
-	["cursor"] = false,		-- tooltip at mouse
+	["anchorCursor"] = false,		-- tooltip at mouse
 	["position"] = {"BOTTOMRIGHT", -25, 30},	-- tooltip position
-	["ilvlspec"] = true,		-- show gear info and specialization on tooltip
 	["sbHeight"] = 2,
-	["scale"] = 1,
-	["pBar"] = false,
+	["guildRank"] = false,
+	["realm"] = true,
+	["title"] = false,
 	["fadeOnUnit"] = false,
 	["combathide"] = false,
 	["combathideALL"] = false,
-	["showGRank"] = false,
-	["showRealm"] = true,
-	["playerTitle"] = true,
+	["ilvlspec"] = true,		-- show gear info and specialization on tooltip
 	["idtip"] = true,
 }
 
@@ -189,10 +176,13 @@ C["quests"] = {
  		["alwaysCollapseObjectiveTracker"] = false,	-- always collapses objective tracker on login
  	["position"] = {"TOPRIGHT", UIParent, "TOPRIGHT", -20, -260},
  	["height"] = 600,
+ 	["usePixelFont"] = false,
 }
 
 C["unitframes"] = {
 	["enable"] = true, 						-- enable the unit frames and their included modules
+	
+	["pixelFontCN"] = true,
 
 	["transMode"] = true,
 		["transModeAlpha"] = .3,
@@ -217,63 +207,66 @@ C["unitframes"] = {
 		["partyMissingHealth"] = true,				-- show missing health
 	["enableArena"] = false,					-- enable arena/flag carrier frames
 
-	["player"] = {"BOTTOM", UIParent, "BOTTOM", 0, 260},						-- player unitframe position
+	["player"] = {"BOTTOM", UIParent, "BOTTOM", 0, 200},						-- player unitframe position
+	["player_width"] = 200,
+	["player_height"] = 12,
+	["player_castbar"] = {"CENTER", 'oUF_FreePlayer', "CENTER", 0, -50},		-- player castbar position
+	["player_castbar_width"] = 200,
+
 	["pet"] = {"RIGHT", "oUF_FreePlayer", "LEFT", -5, 0},									-- pet unitframe position
-	["target"] = {"LEFT", 'oUF_FreePlayer', "RIGHT", 26, 120},					-- target unitframe position
+	["pet_width"] = 89,
+	["pet_height"] = 12,
+
+	["target"] = {"LEFT", 'oUF_FreePlayer', "RIGHT", 50, 120},					-- target unitframe position
+	["target_width"] = 262,
+	["target_height"] = 12,
+	["target_castbar"] = {"TOP", 'oUF_FreeTarget', "BOTTOM", 0, -6},			-- target castbar position
+	["target_castbar_width"] = 262,
+
 	["targettarget"] = {"LEFT", "oUF_FreeTarget", "RIGHT", 5, 0},							-- target target unitframe position
-	["focus"] = {"LEFT", 'oUF_FreePlayer', "RIGHT", 26, -40},					-- focus unitframe position
-	["focustarget"] = {"LEFT", "oUF_FreeFocus", "RIGHT", 5, 0},							-- focus target unitframe position
-	["party"] = {"BOTTOMRIGHT", 'oUF_FreePlayer', "TOPLEFT", -100, 20},			-- party unitframe position
-	["raid"] = {"BOTTOMRIGHT", 'oUF_FreePlayer', "TOPLEFT", -60, 30},			-- raid unitframe position
+	["targettarget_width"] = 80,
+	["targettarget_height"] = 12,
+
+	["focus"] = {"RIGHT", 'oUF_FreePlayer', "LEFT", -5, 40},					-- focus unitframe position
+	["focus_width"] = 89,
+	["focus_height"] = 12,
+	["focus_castbar"] = {"RIGHT", 'oUF_FreeFocus', "RIGHT", 0, 40},				-- focus castbar position
+	["focus_castbar_width"] = 165,
+
+	["focustarget"] = {"RIGHT", "oUF_FreeFocus", "LEFT", -5, 0},							-- focus target unitframe position
+	["focustarget_width"] = 89,
+	["focustarget_height"] = 12,
+
+	["party"] = {"TOPLEFT", 'oUF_FreeTarget', "BOTTOMLEFT", 0, -30},			-- party unitframe position
+	["party_width"] = 50,
+	["party_height"] = 34,
+
+	["raid"] = {"TOPLEFT", 'oUF_FreeTarget', "BOTTOMLEFT", 0, -30},			-- raid unitframe position
+	["raid_width"] = 50,
+	["raid_height"] = 30,
+
 	["boss"] = {a='LEFT', b='oUF_FreeTarget', c="RIGHT", x=10, y=80},			-- boss unitframe position
+	["boss_width"] = 160,
+	["boss_height"] = 16,
+
 	["arena"] = {a='LEFT', b='UIParent', c="LEFT", x=20, y=100},				-- arena unitframe position
-
-	["player_castbar"] = {"CENTER", 'oUF_FreePlayer', "CENTER", 0, -80},		-- player castbar position
-	["player_castbar_width"] = 224,
-
-	["target_castbar"] = {"BOTTOM", 'oUF_FreeTarget', "TOP", 0, 20},			-- target castbar position
-	["target_castbar_width"] = 229,
-
-	["focus_castbar"] = {"LEFT", 'oUF_FreeFocus', "LEFT", 0, -40},				-- focus castbar position
-	["focus_castbar_width"] = 229,
-
+	["arena_width"] = 229,
+	["arena_height"] = 12,
+	
 	["castbarColorInterrupt"] = {241/255, 23/255, 45/255},
 	["castbarColorNormal"] = {113/255, 178/255, 237/255},
 	["castbarHeight"] = 6,
 
-	["power_height"] = 2,
-	["altpower_height"] = 2,
+	["power_height"] = 1,
+	["altpower_height"] = 1,
 	["classPower_height"] = 2,
-
-	["player_width"] = 224,
-	["player_height"] = 12,
-	["target_width"] = 229,
-	["target_height"] = 12,
-	["targettarget_width"] = 80,
-	["targettarget_height"] = 12,
-	["focus_width"] = 112,
-	["focus_height"] = 12,
-	["focustarget_width"] = 112,
-	["focustarget_height"] = 12,
-	["pet_width"] = 80,
-	["pet_height"] = 12,
-	["boss_width"] = 160,
-	["boss_height"] = 16,
-	["arena_width"] = 229,
-	["arena_height"] = 12,
-	["party_width"] = 90,
-	["party_height"] = 34,
-	["raid_width"] = 70,
-	["raid_height"] = 30,
 
 	["num_player_debuffs"] = 8,
 	["num_target_debuffs"] = 16,
 	["num_target_buffs"] = 16,
 	["num_arena_buffs"] = 8,
 	["num_focus_debuffs"] = 4,
-
 }
-
 
 C["chat"] = {
 	["itemLevel"] = true,
@@ -298,8 +291,14 @@ C["camera"] = {
 }
 
 -- [[ Filters ]]
+-- buff/debuff过滤规则
+-- 需要更新
+-- WA更方便
 
 -- Debuffs by other players or NPCs you want to show on enemy target
+-- 目标框体的debuff过滤表
+-- 由其他玩家或NPC施放的控制性技能
+-- 以下debuff将显示
 
 C["debuffFilter"] = {
 	-- CC
@@ -422,6 +421,9 @@ C["debuffFilter"] = {
 }
 
 -- Buffs to show on enemy players
+-- 目标框体的buff过滤表
+-- 防守/爆发性技能
+-- 以下buff将显示
 
 C["dangerousBuffs"] = {
 	-- Immunities
@@ -563,6 +565,10 @@ C["dangerousBuffs"] = {
 }
 
 -- Debuffs healers don't want to see on raid frames
+-- 小队/团队框体的debuff过滤表
+-- 无意义的垃圾技能
+-- 比如密境的挑战者负担之类
+-- 以下技能将隐藏
 
 C["hideDebuffs"] = {
 	[57724] = true, -- Sated
@@ -605,6 +611,10 @@ C["hideDebuffs"] = {
 if select(2, UnitClass("player")) == "PRIEST" then C.hideDebuffs[6788] = false end
 
 -- Buffs cast by the player that healers want to see on raid frames
+-- 小队/团队框体的buff过滤表
+-- 玩家自己施放的技能
+-- 比如奶德的恢复牧师的盾之类
+-- 以下技能将显示
 
 C["myBuffs"] = {
 	[774] = true, -- Rejuvenation
@@ -636,6 +646,10 @@ C["myBuffs"] = {
 }
 
 -- Buffs cast by anyone that healers want to see on raid frames
+-- 小队/团队框体的buff过滤表
+-- 治疗专精希望看到的由其他队友施放的技能
+-- 比如坦克的减伤技能
+-- 以下技能将显示
 
 C["allBuffs"] = {
 	[86657] = true, -- Ancient Guardian

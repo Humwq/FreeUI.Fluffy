@@ -2,6 +2,40 @@ local F, C = unpack(select(2, ...))
 
 if not C.unitframes.enable then return end
 
+--[[ Element: Resurrect Icon
+
+ Handles updating and toggles visibility of incoming resurrect icon.
+
+ Widget
+
+ ResurrectIcon - A Texture used to display if the unit has an incoming
+ resurrect.
+
+ Notes
+
+ The default resurrect icon will be used if the UI widget is a texture and
+ doesn't have a texture or color defined.
+
+ Examples
+
+   -- Position and size
+   local ResurrectIcon = self:CreateTexture(nil, 'OVERLAY')
+   ResurrectIcon:SetSize(16, 16)
+   ResurrectIcon:SetPoint('TOPRIGHT', self)
+   
+   -- Register it with oUF
+   self.ResurrectIcon = ResurrectIcon
+
+ Hooks
+
+ Override(self) - Used to completely override the internal update function.
+                  Removing the table key entry will make the element fall-back
+                  to its internal function again.
+]]
+
+local parent, ns = ...
+local oUF = ns.oUF
+
 local Update = function(self, event)
 	local resurrect = self.ResurrectIcon
 	if(resurrect.PreUpdate) then

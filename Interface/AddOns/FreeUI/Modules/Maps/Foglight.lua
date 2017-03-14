@@ -19,16 +19,16 @@ FoglightMode = 1
 local showTerrain = false
 
 local moads = {'Hybrid', 'Disabled', 'All Terrain', 'No Terrain'}
-local menu = CreateFrame('frame', 'foglightmenu', WorldMapFrame.UIElementsFrame, 'Lib_UIDropDownMenuTemplate')
+local menu = CreateFrame('frame', 'foglightmenu', WorldMapFrame.UIElementsFrame, 'UIDropDownMenuTemplate')
 menu:SetPoint('TOPRIGHT', -19, -8)
 --menu:SetFrameLevel(WORLDMAP_POI_FRAMELEVEL + 2)
-menu:SetAlpha(0.8)
+menu:SetAlpha(0)
 
 F.ReskinDropDown(menu)
 
 local function setMode(mode)
 	if not moads[mode] then mode = 1 end
-	Lib_UIDropDownMenu_SetSelectedID(foglightmenu, mode)
+	UIDropDownMenu_SetSelectedID(foglightmenu, mode)
 	if mode == 1 then -- hybrid
 		overlayFrame:Show()
 		for _,tx in pairs(terrainTextures) do tx:SetDrawLayer('ARTWORK', -2) end
@@ -52,17 +52,17 @@ end
 
 local function initmenu()
 	for i,v in ipairs(moads) do
-		local info = Lib_UIDropDownMenu_CreateInfo()
+		local info = UIDropDownMenu_CreateInfo()
 		info.text = v
 		info.func = menuOnClick
 		--if i == FoglightMode then info.checked = true end
-		Lib_UIDropDownMenu_AddButton(info)
+		UIDropDownMenu_AddButton(info)
 	end
 end
 
-Lib_UIDropDownMenu_Initialize(foglightmenu, initmenu)
-Lib_UIDropDownMenu_SetSelectedID(foglightmenu, 1)
-Lib_UIDropDownMenu_SetWidth(foglightmenu, 85)
+UIDropDownMenu_Initialize(foglightmenu, initmenu)
+UIDropDownMenu_SetSelectedID(foglightmenu, 1)
+UIDropDownMenu_SetWidth(foglightmenu, 85)
 
 local addonName = ...
 menu:SetScript('OnEvent', function(_, _, ...)

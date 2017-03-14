@@ -95,7 +95,7 @@ end
 C.defaults = {
 	["acknowledgedSplashScreen"] = false,
 
-	["alpha"] = 0.6,
+	["alpha"] = 0.5,
 	["bags"] = false,
 	["buttonGradientColour"] = {.3, .3, .3, .3},
 	["buttonSolidColour"] = {.1, .1, .1, 1},
@@ -827,6 +827,13 @@ F.ReskinGarrisonPortrait = function(portrait, isTroop)
 	portrait.PortraitRingQuality:SetTexture("")
 	portrait.PortraitRingCover:SetTexture("")
 	portrait.LevelBorder:SetAlpha(0)
+
+	local squareBG = CreateFrame("Frame", nil, portrait)
+	squareBG:SetFrameLevel(portrait:GetFrameLevel())
+	squareBG:SetPoint("TOPLEFT", 3, -3)
+	squareBG:SetPoint("BOTTOMRIGHT", -3, 11)
+	F.CreateBD(squareBG, 1)
+	portrait.squareBG = squareBG
 
 	if not isTroop then
 		local lvlBG = portrait:CreateTexture(nil, "BORDER")

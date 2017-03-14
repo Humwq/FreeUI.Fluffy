@@ -288,11 +288,8 @@ do
 	local fontUseAlternativeFont = ns.CreateCheckBox(appearance, "fontUseAlternativeFont", true, true)
 	fontUseAlternativeFont:SetPoint("TOPLEFT", fonts, "BOTTOMLEFT", 0, -20)
 
-	local fontUseChinesePixelFont = ns.CreateCheckBox(appearance, "fontUseChinesePixelFont", true, true)
-	fontUseChinesePixelFont:SetPoint("TOPLEFT", fontUseAlternativeFont, "BOTTOMLEFT", 0, -8)
-
 	local fontSizeNormal = ns.CreateNumberSlider(appearance, "fontSizeNormal", 5, 32, 5, 32, 1, true)
-	fontSizeNormal:SetPoint("TOPLEFT", fontUseChinesePixelFont, "BOTTOMLEFT", 16, -26)
+	fontSizeNormal:SetPoint("TOPLEFT", fontUseAlternativeFont, "BOTTOMLEFT", 16, -26)
 
 	appearance.normalSample = appearance:CreateFontString()
 	appearance.normalSample:SetPoint("TOPLEFT", fontSizeNormal, "BOTTOMLEFT", 0, -16)
@@ -672,36 +669,32 @@ do
 	local enable = ns.CreateCheckBox(tooltip, "enable", true, true)
 	enable:SetPoint("TOPLEFT", tooltip.subText, "BOTTOMLEFT", 0, -16)
 
-	local cursor = ns.CreateCheckBox(tooltip, "cursor", true, true)
-	cursor:SetPoint("TOPLEFT", enable, "BOTTOMLEFT", 16, -8)
+	local anchorCursor = ns.CreateCheckBox(tooltip, "anchorCursor", true, true)
+	anchorCursor:SetPoint("TOPLEFT", enable, "BOTTOMLEFT", 16, -8)
 
-	local playerTitle = ns.CreateCheckBox(tooltip, "playerTitle", true, true)
-	playerTitle:SetPoint("TOPLEFT", cursor, "BOTTOMLEFT", 0, -8)
+	local guildRank = ns.CreateCheckBox(tooltip, "guildRank", true, true)
+	guildRank:SetPoint("TOPLEFT", anchorCursor, "BOTTOMLEFT", 0, -8)
 
-	local showRealm = ns.CreateCheckBox(tooltip, "showRealm", true, true)
-	showRealm:SetPoint("TOPLEFT", playerTitle, "BOTTOMLEFT", 0, -8)
+	local realm = ns.CreateCheckBox(tooltip, "realm", true, true)
+	realm:SetPoint("TOPLEFT", guildRank, "BOTTOMLEFT", 0, -8)
 
-	local showRank = ns.CreateCheckBox(tooltip, "showRank", true, true)
-	showRank:SetPoint("TOPLEFT", showRealm, "BOTTOMLEFT", 0, -8)
+	local title = ns.CreateCheckBox(tooltip, "title", true, true)
+	title:SetPoint("TOPLEFT", realm, "BOTTOMLEFT", 0, -8)
 
 	local combathideALL = ns.CreateCheckBox(tooltip, "combathideALL", true, true)
-	combathideALL:SetPoint("TOPLEFT", showRank, "BOTTOMLEFT", 0, -8)
+	combathideALL:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -8)
 
 	local ilvlspec = ns.CreateCheckBox(tooltip, "ilvlspec", true, true)
 	ilvlspec:SetPoint("TOPLEFT", combathideALL, "BOTTOMLEFT", 0, -8)
 
-	local idtip = ns.CreateCheckBox(tooltip, "idtip", true, true)
-	idtip:SetPoint("TOPLEFT", ilvlspec, "BOTTOMLEFT", 0, -8)
-
 	local function toggleTooltipOptions()
 		local shown = enable:GetChecked()
-		cursor:SetShown(shown)
-		playerTitle:SetShown(shown)
-		showRealm:SetShown(shown)
-		showRank:SetShown(shown)
+		anchorCursor:SetShown(shown)
+		guildRank:SetShown(shown)
+		realm:SetShown(shown)
+		title:SetShown(shown)
 		combathideALL:SetShown(shown)
 		ilvlspec:SetShown(shown)
-		idtip:SetShown(shown)
 	end
 
 	enable:HookScript("OnClick", toggleTooltipOptions)

@@ -26,15 +26,11 @@ DEPENDENCIES
 	mixins/textFilter.lua
 ]]
 
-local _, ns = ...
+local addon, ns = ...
 local cargBags = ns.cargBags
 
--- Lua Globals --
-local _G = _G
-local next = _G.next
-
 local function apply(self, container, text, mode)
-	if text == "" or not text then
+	if(text == "" or not text) then
 		container:ApplyToButtons(self.highlightFunction, true)
 	else
 		container:FilterForFunction(self.highlightFunction, self.currFilters)
@@ -42,29 +38,27 @@ local function apply(self, container, text, mode)
 end
 
 local function doSearch(self, text)
-	if _G.type(text) == "string" then
+	if(type(text) == "string") then
 		self:SetText(text)
 	else
 		text = self:GetText()
 	end
 
-	if self.currFilters then
+	if(self.currFilters) then
 		self.currFilters:Empty()
-	else
-		self.currFilters = cargBags.classes.FilterSet:New()
 	end
 
-	self.currFilters:SetTextFilter(text, self.textFilters)
+	self.currFilters = self.parent.implementation:ParseTextFilter(text, self.currFilters, self.textFilters)
 
-	if self.isGlobal then
-		for name, container in next, self.parent.implementation.contByName do
+	if(self.isGlobal) then
+		for name, container in pairs(self.parent.implementation.contByName) do
 			apply(self, container, text)
 		end
 	else
 		apply(self, self.parent, text)
 	end
 
-	self.parent.implementation:UpdateAll()
+	self.parent.implementation:OnEvent("BAG_UPDATE")
 end
 
 local function target_openSearch(target)
@@ -80,17 +74,17 @@ end
 local function onEscape(search)
 	doSearch(search, "")
 	search:ClearFocus()
-	if search.OnEscapePressed then search:OnEscapePressed() end
+	if(search.OnEscapePressed) then search:OnEscapePressed() end
 end
 
 local function onEnter(search)
 	search:ClearFocus()
-	if search.OnEnterPressed then search:OnEnterPressed() end
+	if(search.OnEnterPressed) then search:OnEnterPressed() end
 end
 
 cargBags:RegisterPlugin("SearchBar", function(self, target)
-	local search = _G.CreateFrame("EditBox", nil, self)
-
+	local search = CreateFrame("EditBox", nil, self)
+	
 	if FreeUI then
 		local F, C, L = unpack(FreeUI)
 		local locale = GetLocale()
@@ -117,7 +111,7 @@ cargBags:RegisterPlugin("SearchBar", function(self, target)
 	search:SetScript("OnEscapePressed", onEscape)
 	search:SetScript("OnEnterPressed", onEnter)
 
-	if target then
+	if(target) then
 		search:SetAutoFocus(true)
 		search:SetAllPoints(target)
 		search:Hide()

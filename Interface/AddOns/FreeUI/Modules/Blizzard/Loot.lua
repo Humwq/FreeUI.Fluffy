@@ -240,7 +240,7 @@ addon.LOOT_SLOT_CLEARED = function(self, event, slot)
 end
 
 addon.OPEN_MASTER_LOOT_LIST = function(self)
-	Lib_ToggleDropDownMenu(1, nil, GroupLootDropDown, addon.slots[ss], 0, 0)
+	ToggleDropDownMenu(1, nil, GroupLootDropDown, addon.slots[ss], 0, 0)
 end
 
 addon.UPDATE_MASTER_LOOT_LIST = function(self)
