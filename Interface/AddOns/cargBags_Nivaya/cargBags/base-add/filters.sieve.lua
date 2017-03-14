@@ -23,13 +23,8 @@ DESCRIPTION
 	It is not compatible with other container sieves, especially not
 	with the ones using Implementation:GetContainerForItem()
 ]]
-local addon, ns = ...
+local _, ns = ...
 local cargBags = ns.cargBags
-
--- Lua Globals --
-local _G = _G
-local next = _G.next
-
 local Implementation = cargBags.classes.Implementation
 local Container = cargBags.classes.Container
 
@@ -40,7 +35,7 @@ local FilterSet = cargBags:NewClass("FilterSet")
 	@return set <FilterSet>
 ]]
 function FilterSet:New()
-	return _G.setmetatable({
+	return setmetatable({
 		funcs = {},
 		params = {},
 		chained = {},
@@ -51,9 +46,9 @@ end
 	Empties the filter table
 ]]
 function FilterSet:Empty()
-	for k in next, self.funcs do self.funcs[k] = nil end
-	for k in next, self.params do self.params[k] = nil end
-	for k in next, self.chained do self.chained[k] = nil end
+	for k in pairs(self.funcs) do self.funcs[k] = nil end
+	for k in pairs(self.params) do self.params[k] = nil end
+	for k in pairs(self.chained) do self.chained[k] = nil end
 end
 
 --[[!
@@ -72,7 +67,7 @@ end
 	@param flag <bool> whether the filter is enabled (-1: inverted) [optional]
 ]]
 function FilterSet:SetExtended(filter, param, flag)
-	if not flag and param then
+	if(not flag and param) then
 		flag = true
 	end
 	self:Set(filter, flag)
@@ -85,8 +80,8 @@ end
 	@param ... <function> a list of filters
 ]]
 function FilterSet:SetMultiple(flag, ...)
-	for i = 1, _G.select("#", ...) do
-		local filter = _G.select(i, ...)
+	for i=1, select("#", ...) do
+		local filter = select(i, ...)
 		self:Set(filter, flag)
 	end
 end
@@ -109,16 +104,16 @@ function FilterSet:Check(item)
 	local funcs, params = self.funcs, self.params
 
 	-- check own filters
-	for filter, flag in next, funcs do
+	for filter, flag in pairs(funcs) do
 		local result = filter(item, params[filter])
-		if (flag == true and not result) or (flag == -1 and result) then
+		if((flag == true and not result) or (flag == -1 and result)) then
 			return nil
 		end
 	end
 
 	-- check filters of chained sets
-	for table in next, self.chained do
-		if not table:Check(item) then
+	for table in pairs(self.chained) do
+		if(not table:Check(item)) then
 			return nil
 		end
 	end
@@ -132,8 +127,8 @@ end
 	@return container <Container>
 ]]
 function Implementation:GetContainerForItem(item)
-	for i, container in next, self.contByID do
-		if not container.filters or container.filters:Check(item) then
+	for i, container in ipairs(self.contByID) do
+		if(not container.filters or container.filters:Check(item)) then
 			return container
 		end
 	end
@@ -142,7 +137,7 @@ end
 --[[
 	Simple function shortcuts for Containers
 ]]
-for name, func in next, {
+for name, func in pairs{
 	["SetFilter"] = "Set",
 	["SetExtendedFilter"] = "SetExtended",
 	["SetMultipleFilters"] = "SetMultiple",
@@ -163,7 +158,7 @@ end
 function Container:FilterForFunction(func, filters)
 	filters = filters or self.filters
 
-	for i, button in next, self.buttons do
+	for i, button in pairs(self.buttons) do
 		local result = filters:Check(button:GetItemInfo())
 		func(button, result)
 	end

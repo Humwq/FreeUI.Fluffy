@@ -12,11 +12,6 @@ local backdrop = {edgeFile = C.media.texture, edgeSize = 1}
 local backdropcolor = {0/255, 0/255, 0/255}
 local brdcolor = {0/255, 0/255, 0/255}
 
-
------------------------------
--- Init
------------------------------
-
 MinimapCluster:SetScale(Scale)
 MinimapCluster:ClearAllPoints()
 MinimapCluster:SetPoint(position.a1,position.af,position.a2,position.x,position.y)
@@ -44,12 +39,14 @@ BorderFrame:SetFrameLevel(6)
 F.CreateSD(BorderFrame)
 
 -- on click mechanic
-Minimap:SetScript('OnMouseUp', function(self, button)
-	Minimap:StopMovingOrSizing()
-	if button == 'RightButton' then
-		ToggleDropDownMenu(1, nil, MiniMapTrackingDropDown, self, - (Minimap:GetWidth() * .7), 30)
+Minimap:SetScript("OnMouseUp", function(self, button)
+	if button == "RightButton" then
+		ToggleDropDownMenu(1, nil, MiniMapTrackingDropDown, "cursor", -162, 190)
 	elseif button == 'MiddleButton' then
-		securecall(ToggleCalendar)
+		if not IsAddOnLoaded("Blizzard_Calendar") then
+			LoadAddOn('Blizzard_Calendar')
+		end
+		Calendar_Toggle()
 	else
 		Minimap_OnClick(self)
 	end
@@ -87,29 +84,6 @@ local region = TimeManagerClockButton:GetRegions()
 region:Hide()
 TimeManagerClockButton:Hide()
 
-
--- difficulty
-MiniMapInstanceDifficulty:ClearAllPoints()
-MiniMapInstanceDifficulty:SetPoint('TOPLEFT', Minimap, 3, -30)
-GuildInstanceDifficulty:ClearAllPoints()
-GuildInstanceDifficulty:SetPoint('TOPLEFT', Minimap, 3, -30)
-MiniMapChallengeMode:ClearAllPoints()
-MiniMapChallengeMode:SetPoint('TOPLEFT', Minimap, 3, -30)
-
--- lfg/lfr/pvp
-local lfg = MiniMapLFGFrame or QueueStatusMinimapButton
-lfg:SetScale(.9)
-lfg:ClearAllPoints()
-lfg:SetParent(Minimap)
-lfg:SetFrameStrata'HIGH'
-lfg:SetPoint('BOTTOMLEFT', Minimap, 3, 30)
-lfg:SetHighlightTexture(nil)
-QueueStatusMinimapButtonBorder:SetTexture(nil)
---QueueStatusMinimapButtonBorder:SetPoint("TOPLEFT", lfg, "TOPLEFT", -4, 4)
---QueueStatusMinimapButtonBorder:SetPoint("BOTTOMRIGHT", lfg, "BOTTOMRIGHT", 4, -4)
---QueueStatusMinimapButtonBorder:SetVertexColor(0, 0, 0, 1)
-
-
 -- mail
 local mail = CreateFrame("Frame", "FreeUIMailFrame", Minimap)
 mail:Hide()
@@ -136,8 +110,6 @@ MiniMapMailFrame:SetAlpha(0)
 MiniMapMailFrame:SetSize(22, 10)
 MiniMapMailFrame:ClearAllPoints()
 MiniMapMailFrame:SetPoint("CENTER", mt)
-
-
 
 -- durability
 --[[
@@ -206,8 +178,7 @@ Minimap:HookScript("OnLeave", function()
 	MinimapZoneTextButton:SetAlpha(0)
 end)
 
-
---MiniMapNorthTag
+-- MiniMapNorthTag
 MinimapNorthTag:ClearAllPoints()
 MinimapNorthTag:SetPoint("TOP",Minimap,0,-3)
 MinimapNorthTag:SetAlpha(0)
@@ -218,8 +189,6 @@ Minimap:SetQuestBlobRingScalar(0)
 GuildInstanceDifficulty:SetAlpha(0)
 MiniMapChallengeMode:GetRegions():SetTexture("")
 
-
-
 GameTimeFrame:ClearAllPoints()
 GameTimeFrame:SetPoint("TOPRIGHT", Minimap, "TOPRIGHT", -1, -33)
 GameTimeFrame:SetSize(16, 16)
@@ -228,6 +197,7 @@ GameTimeFrame:SetNormalTexture("")
 GameTimeFrame:SetPushedTexture("")
 GameTimeFrame:SetHighlightTexture("")
 
+-- Queue Status
 local _, _, _, _, dateText = GameTimeFrame:GetRegions()
 F.SetFS(dateText)
 dateText:SetTextColor(r, g, b)
@@ -305,62 +275,64 @@ QueueStatusMinimapButton:HookScript("OnLeave", function()
 	end
 end)
 
-TicketStatusFrame:ClearAllPoints()
-TicketStatusFrame:SetPoint("TOPRIGHT", UIParent, "TOPRIGHT", -49, 0)
-
+-- Instance Difficulty
+local difftext = {}
 local rd = CreateFrame("Frame", nil, Minimap)
 rd:SetSize(24, 8)
 rd:SetPoint("TOPLEFT", Minimap, "TOPLEFT", 5, -37)
 rd:RegisterEvent("PLAYER_ENTERING_WORLD")
+rd:RegisterEvent("CHALLENGE_MODE_START")
+rd:RegisterEvent("CHALLENGE_MODE_COMPLETED")
+rd:RegisterEvent("CHALLENGE_MODE_RESET")
 rd:RegisterEvent("PLAYER_DIFFICULTY_CHANGED")
 rd:RegisterEvent("GUILD_PARTY_STATE_UPDATED")
-rd:RegisterEvent("INSTANCE_GROUP_SIZE_CHANGED")
+rd:RegisterEvent("ZONE_CHANGED_NEW_AREA")
 
 local rdt = F.CreateFS(rd, C.FONT_SIZE_NORMAL, "LEFT")
 rdt:SetPoint("TOPLEFT")
-
-local instanceTexts = {
-	[0] = "",
-	[1] = "5",
-	[2] = "5H",
-	[3] = "10",
-	[4] = "25",
-	[5] = "10H",
-	[6] = "25H",
-	[7] = "RF",
-	[8] = "CM",
-	[9] = "40",
-	[11] = "3H",
-	[12] = "3",
-	[16] = "M",
-	[23] = "5M",	-- Mythic 5-player
-	[24] = "5T",	-- Timewalker 5-player
-}
+rdt:SetTextColor(1, 1, 1)
 
 rd:SetScript("OnEvent", function()
-	local inInstance, instanceType = IsInInstance()
-	local _, _, difficultyID, _, maxPlayers, _, _, _, instanceGroupSize = GetInstanceInfo()
+	local difficulty = select(3, GetInstanceInfo())
+	local numplayers = select(9, GetInstanceInfo())
+	local mplusdiff = select(1, C_ChallengeMode.GetActiveKeystoneInfo()) or "";
 
-	if instanceTexts[difficultyID] ~= nil then
-		rdt:SetText(instanceTexts[difficultyID])
+	if (difficulty == 1) then
+		rdt:SetText("5")
+	elseif difficulty == 2 then
+		rdt:SetText("5H")
+	elseif difficulty == 3 then
+		rdt:SetText("10")
+	elseif difficulty == 4 then
+		rdt:SetText("25")
+	elseif difficulty == 5 then
+		rdt:SetText("10H")
+	elseif difficulty == 6 then
+		rdt:SetText("25H")
+	elseif difficulty == 7 then
+		rdt:SetText("LFR")
+	elseif difficulty == 8 then
+		rdt:SetText("M+"..mplusdiff)
+	elseif difficulty == 9 then
+		rdt:SetText("40")
+	elseif difficulty == 11 then
+		rdt:SetText("HScen")
+	elseif difficulty == 12 then
+		rdt:SetText("Scen")
+	elseif difficulty == 14 then
+		rdt:SetText("N:"..numplayers)
+	elseif difficulty == 15 then
+		rdt:SetText("H:"..numplayers)
+	elseif difficulty == 16 then
+		rdt:SetText("M")
+	elseif difficulty == 17 then
+		rdt:SetText("LFR:"..numplayers)
+	elseif difficulty == 23 then
+		rdt:SetText("M+")
+	elseif difficulty == 24 then
+		rdt:SetText("TW")
 	else
-		if difficultyID == 14 then
-			rdt:SetText(instanceGroupSize.."N")
-		elseif difficultyID == 15 then
-			rdt:SetText(instanceGroupSize.."H")
-		elseif difficultyID == 17 then
-			rdt:SetText(instanceGroupSize.."RF")
-		else
-			rdt:SetText("")
-		end
-	end
-
-	rd:SetShown(inInstance and (instanceType == "party" or instanceType == "raid" or instanceType == "scenario"))
-
-	if GuildInstanceDifficulty:IsShown() then
-		rdt:SetTextColor(0, .9, 0)
-	else
-		rdt:SetTextColor(1, 1, 1)
+		rdt:SetText("")
 	end
 end)
 
@@ -401,3 +373,7 @@ for _, ticketButton in pairs({HelpOpenTicketButton, HelpOpenWebTicketButton}) do
 	ticketButton:HookScript("OnShow", positionTicketButtons)
 	ticketButton:HookScript("OnHide", positionTicketButtons)
 end
+
+TicketStatusFrame:ClearAllPoints()
+TicketStatusFrame:SetPoint("TOPRIGHT", UIParent, "TOPRIGHT", -49, 0)
+

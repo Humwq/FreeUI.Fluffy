@@ -23,6 +23,7 @@ _G.tinsert(C.themes["Aurora"], function()
 	end
 
 	F.ReskinPortraitFrame(_G.WorldStateScoreFrame, true)
+	F.Reskin(_G.WorldStateScoreFrameQueueButton)
 	F.Reskin(_G.WorldStateScoreFrameLeaveButton)
 	F.ReskinScroll(_G.WorldStateScoreScrollFrameScrollBar)
 

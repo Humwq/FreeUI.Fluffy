@@ -1,6 +1,6 @@
 -- by Alza
 
-local menuFrame = CreateFrame("Frame", "aSettingsMarkingFrame", UIParent, "Lib_UIDropDownMenuTemplate")
+local menuFrame = CreateFrame("Frame", "aSettingsMarkingFrame", UIParent, "UIDropDownMenuTemplate")
 local menuList = {
 	{text = "Clear", func = function() SetRaidTarget("target", 0) end},
 	{text = "Skull", func = function() SetRaidTarget("target", 8) end},

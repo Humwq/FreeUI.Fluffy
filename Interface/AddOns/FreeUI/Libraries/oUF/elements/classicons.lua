@@ -2,6 +2,56 @@ local F, C = unpack(select(2, ...))
 
 if not C.unitframes.enable then return end
 
+--[[ Element: Class Icons
+
+ Toggles the visibility of icons depending on the player's class and
+ specialization.
+
+ Widget
+
+ ClassIcons - An array consisting of as many UI Textures as the theoretical
+ maximum return of `UnitPowerMax`.
+
+ Notes
+
+ All     - Combo Points
+ Mage    - Arcane Charges
+ Monk    - Chi Orbs
+ Paladin - Holy Power
+ Warlock - Soul Shards
+
+ Examples
+
+   local ClassIcons = {}
+   for index = 1, 6 do
+      local Icon = self:CreateTexture(nil, 'BACKGROUND')
+
+      -- Position and size.
+      Icon:SetSize(16, 16)
+      Icon:SetPoint('TOPLEFT', self, 'BOTTOMLEFT', index * Icon:GetWidth(), 0)
+
+      ClassIcons[index] = Icon
+   end
+
+   -- Register with oUF
+   self.ClassIcons = ClassIcons
+
+ Hooks
+
+ OverrideVisibility(self) - Used to completely override the internal visibility
+                            function. Removing the table key entry will make
+                            the element fall-back to its internal function
+                            again.
+ Override(self)           - Used to completely override the internal update
+                            function. Removing the table key entry will make the
+                            element fall-back to its internal function again.
+ UpdateTexture(element)   - Used to completely override the internal function
+                            for updating the power icon textures. Removing the
+                            table key entry will make the element fall-back to
+                            its internal function again.
+
+]]
+
 local parent, ns = ...
 local oUF = ns.oUF
 
@@ -25,8 +75,8 @@ local UpdateTexture = function(element)
 end
 
 local Update = function(self, event, unit, powerType)
-	if(not (unit == 'player' and powerType == ClassPowerType)
-		and not (unit == 'vehicle' and powerType == 'COMBO_POINTS')) then
+	if(not (unit == 'player' and powerType == ClassPowerType
+		or unit == 'vehicle' and powerType == 'COMBO_POINTS')) then
 		return
 	end
 
@@ -49,7 +99,7 @@ local Update = function(self, event, unit, powerType)
 	if(event ~= 'ClassPowerDisable') then
 		if(unit == 'vehicle') then
 			-- XXX: UnitPower is bugged for vehicles, always returns 0 combo points
-			cur = GetComboPoints('vehicle', 'target')
+			cur = GetComboPoints(unit)
 			max = MAX_COMBO_POINTS
 		else
 			cur = UnitPower('player', ClassPowerID)
@@ -104,6 +154,7 @@ local function Visibility(self, event, unit)
 
 	if(UnitHasVehicleUI('player')) then
 		shouldEnable = true
+		unit = 'vehicle'
 	elseif(ClassPowerID) then
 		if(not RequireSpec or RequireSpec == GetSpecialization()) then
 			if(not RequireSpell or IsPlayerSpell(RequireSpell)) then

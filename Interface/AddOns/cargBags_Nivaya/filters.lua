@@ -11,9 +11,8 @@ cB_KnownItems = cB_KnownItems or {}
 cBniv_CatInfo = {}
 cB_ItemClass = {}
 
-
-cB_existsBankBag = { Armor = true, Gem = true, Quest = true, TradeGoods = true, Consumables = true, Artifact = true, BattlePet = true}
-cB_filterEnabled = { Armor = true, Gem = true, Quest = true, TradeGoods = true, Consumables = true, Artifact = true, Keyring = true, Junk = true, Stuff = true, ItemSets = true, BattlePet = true }
+cB_existsBankBag = { Armor = true, Gem = true, Quest = true, TradeGoods = true, Consumables = true, ArtifactPower = true, BattlePet = true }
+cB_filterEnabled = { Armor = true, Gem = true, Quest = true, TradeGoods = true, Consumables = true, Keyring = true, Junk = true, Stuff = true, ItemSets = true, ArtifactPower = true, BattlePet = true }
 
 --------------------
 --Basic filters
@@ -28,12 +27,8 @@ cB_Filters.fHideEmpty = function(item) if cBnivCfg.CompressEmpty then return ite
 -- General Classification (cached)
 ------------------------------------
 cB_Filters.fItemClass = function(item, container)
-    
-	if not item.id  then	return false	end
-	
-	if not cB_ItemClass[item.id] or cB_ItemClass[item.id] == "ReClass" or item.Zartifact == 1 then	    
-        cbNivaya:ClassifyItem(item)
-    end
+	if not item.id or not item.name then	return false	end	-- incomplete data (itemID or itemName missing), return (item that aren't loaded yet will get classified on the next successful call)
+	if not cB_ItemClass[item.id] then cbNivaya:ClassifyItem(item) end
 	
 	local t, bag = cB_ItemClass[item.id]
 
@@ -43,9 +38,9 @@ cB_Filters.fItemClass = function(item, container)
 	else
 		bag = (t ~= "NoClass" and cB_filterEnabled[t]) and t or "Bag"
 	end
+
 	return bag == container
 end
-
 
 function cbNivaya:ClassifyItem(item)
 	-- keyring
@@ -57,25 +52,20 @@ function cbNivaya:ClassifyItem(item)
 
 	-- junk
 	if (item.rarity == 0) then cB_ItemClass[item.id] = "Junk"; return true end
+
 	-- type based filters
 	if item.type then
 		if		(item.type == L.Armor) or (item.type == L.Weapon)	then cB_ItemClass[item.id] = "Armor"; return true
 		elseif	(item.type == L.Gem)								then cB_ItemClass[item.id] = "Gem"; return true
 		elseif	(item.type == L.Quest)								then cB_ItemClass[item.id] = "Quest"; return true
 		elseif	(item.type == L.Trades)								then cB_ItemClass[item.id] = "TradeGoods"; return true
-		elseif	(item.Zartifact == 1)						        then cB_ItemClass[item.id] = "Artifact"; return true
 		elseif	(item.type == L.Consumables)						then cB_ItemClass[item.id] = "Consumables"; return true
+		elseif	(item.type == ARTIFACT_POWER)						then cB_ItemClass[item.id] = "ArtifactPower"; return true
 		elseif	(item.type == L.BattlePet)							then cB_ItemClass[item.id] = "BattlePet"; return true
 		end
 	end
 	
-	--if item.Zartifact == 1 then
-	
-	if not item.type then
-        cB_ItemClass[item.id] = "ReClass"
-    elseif not cB_ItemClass[item.id] then
-        cB_ItemClass[item.id] = "NoClass"
-    end
+	cB_ItemClass[item.id] = "NoClass"
 end
 
 ------------------------------------------
@@ -111,7 +101,7 @@ cB_Filters.fNewItems = function(item)
 	if not ((item.bagID >= 0) and (item.bagID <= 4)) then return false end
 	if not item.link then return false end
 	if not cB_KnownItems[item.id] then return true end
-	local t = GetItemCount(item.id)	--fix:script run too long
+	local t = GetItemCount(item.id)	--cbNivaya:getItemCount(item.id)
 	return (t > cB_KnownItems[item.id]) and true or false
 end
 
@@ -124,7 +114,7 @@ local IR = IsAddOnLoaded('ItemRack')
 local OF = IsAddOnLoaded('Outfitter')
 
 cB_Filters.fItemSets = function(item)
-	--print("fItemSets", item, item.isInSet, item.link)
+	--print("fItemSets", item, item.isInSet)
 	if not cB_filterEnabled["ItemSets"] then return false end
 	if not item.link then return false end
 	local tC = cBniv_CatInfo[item.name]
@@ -135,7 +125,7 @@ cB_Filters.fItemSets = function(item)
 	local _,_,itemStr = string.find(item.link, "^|c%x+|H(.+)|h%[.*%]")
 	if item2setOF[itemStr] then return true end
 	-- Check Equipment Manager sets:
-	if item.isInSet then return true end
+	if cargBags.itemKeys["setID"](item) then return true end
    return false
 end
 

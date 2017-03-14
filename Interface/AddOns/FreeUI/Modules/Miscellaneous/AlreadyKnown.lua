@@ -1,9 +1,10 @@
 local F, C = unpack(select(2, ...))
--- if C.misc.already_known ~= true then return end
 
-----------------------------------------------------------------------------------------
---	Colorizes recipes/mounts/pets/toys that is already known(AlreadyKnown by Villiv)
-----------------------------------------------------------------------------------------
+if C.general.alreadyKnown ~= true then return end
+
+-- Colorizes recipes/mounts/pets/toys that is already known
+-- AlreadyKnown by Villiv
+
 local color = {r = 0.1, g = 1, b = 0.1}
 local knowns, lines = {}, {}
 local glyph = AUCTION_CATEGORY_GLYPHS

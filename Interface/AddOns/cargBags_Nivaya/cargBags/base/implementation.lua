@@ -17,14 +17,8 @@
 	along with cargBags; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 ]]
-local _, ns = ...
+local addon, ns = ...
 local cargBags = ns.cargBags
-
--- Lua Globals --
-local _G = _G
-local next = _G.next
-local tonumber, strsplit = _G.tonumber, _G.strsplit
-local LibItemLevel = LibStub:GetLibrary("LibItemLevel.7000")
 
 --[[!
 	@class Implementation
@@ -36,8 +30,10 @@ Implementation.instances = {}
 Implementation.itemKeys = {}
 
 local toBagSlot = cargBags.ToBagSlot
-local ItemInfo = {}
 local L
+
+-- Upgrade Level retrieval
+local ItemUpgradeInfo = LibStub("LibItemUpgradeInfo-1.0")
 
 --[[!
 	Creates a new instance of the class
@@ -45,10 +41,10 @@ local L
 	@return impl <Implementation>
 ]]
 function Implementation:New(name)
-	if self.instances[name] then return _G.error(("cargBags: Implementation '%s' already exists!"):format(name)) end
-	if _G[name] then return _G.error(("cargBags: Global '%s' for Implementation is already used!"):format(name)) end
+	if(self.instances[name]) then return error(("cargBags: Implementation '%s' already exists!"):format(name)) end
+	if(_G[name]) then return error(("cargBags: Global '%s' for Implementation is already used!"):format(name)) end
 
-	local impl = _G.setmetatable(_G.CreateFrame("Button", name, _G.UIParent), self.__index)
+	local impl = setmetatable(CreateFrame("Button", name, UIParent), self.__index)
 	impl.name = name
 
 	impl:SetAllPoints()
@@ -64,7 +60,7 @@ function Implementation:New(name)
 	impl.events = {} -- @property events <table> Holds all event callbacks
 	impl.notInited = true -- @property notInited <bool>
 
-	_G.tinsert(_G.UISpecialFrames, name) 
+	tinsert(UISpecialFrames, name) 
 
 	self.instances[name] = impl
 
@@ -76,16 +72,16 @@ end
 	@callback OnOpen
 ]]
 function Implementation:OnShow()
-	if self.notInited then
-		if not _G.InCombatLockdown() then -- initialization of bags in combat taints the itembuttons within - Lars Norberg
+	if(self.notInited) then
+		if not(InCombatLockdown()) then -- initialization of bags in combat taints the itembuttons within - Lars Norberg
 			self:Init()
 		else
 			return
 		end
 	end
 
-	if self.OnOpen then self:OnOpen() end
-	self:UpdateAll()
+	if(self.OnOpen) then self:OnOpen() end
+	self:OnEvent("BAG_UPDATE")
 end
 
 --[[!
@@ -93,10 +89,10 @@ end
 	@callback OnClose
 ]]
 function Implementation:OnHide()
-	if self.notInited then return end
+	if(self.notInited) then return end
 
-	if self.OnClose then self:OnClose() end
-	if self:AtBank() then _G.CloseBankFrame() end
+	if(self.OnClose) then self:OnClose() end
+	if(self:AtBank()) then CloseBankFrame() end
 end
 
 --[[!
@@ -104,7 +100,7 @@ end
 	@param forceopen <bool> Only open it
 ]]
 function Implementation:Toggle(forceopen)
-	if not forceopen and self:IsShown() then
+	if(not forceopen and self:IsShown()) then
 		self:Hide()
 	else
 		self:Show()
@@ -142,11 +138,11 @@ end
 	@return class <table> The class prototype
 ]]
 function Implementation:GetClass(name, create, ...)
-	if not name then return end
+	if(not name) then return end
 
 	name = self.name..name
 	local class = cargBags.classes[name]
-	if class or not create then return class end
+	if(class or not create) then return class end
 
 	class = cargBags:NewClass(name, ...)
 	class.implementation = self
@@ -160,7 +156,7 @@ end
 	@return class <table> The class prototype
 ]]
 function Implementation:GetContainerClass(name)
-	return self:GetClass((name or "") .. "Container", true, "Container")
+	return self:GetClass((name or "").."Container", true, "Container")
 end
 
 --[[!
@@ -170,7 +166,7 @@ end
 	@return class <table> The class prototype
 ]]
 function Implementation:GetItemButtonClass(name)
-	return self:GetClass((name or "") .. "ItemButton", true, "ItemButton")
+	return self:GetClass((name or "").."ItemButton", true, "ItemButton")
 end
 
 --[[!
@@ -191,8 +187,8 @@ function Implementation:RegisterBlizzard()
 	cargBags:RegisterBlizzard(self)
 end
 
-local _registerEvent = _G.UIParent.RegisterEvent
-local _isEventRegistered = _G.UIParent.IsEventRegistered
+local _registerEvent = UIParent.RegisterEvent
+local _isEventRegistered = UIParent.IsEventRegistered
 
 --[[!
 	Registers an event callback - these are only called if the Implementation is currently shown
@@ -204,12 +200,12 @@ local _isEventRegistered = _G.UIParent.IsEventRegistered
 function Implementation:RegisterEvent(event, key, func)
 	local events = self.events
 	
-	if not events[event] then
+	if(not events[event]) then
 		events[event] = {}
 	end
 
 	events[event][key] = func
-	if event:upper() == event and not _isEventRegistered(self, event) then
+	if(event:upper() == event and not _isEventRegistered(self, event)) then
 		_registerEvent(self, event)
 	end
 end
@@ -227,9 +223,9 @@ end
 	Script handler, dispatches the events
 ]]
 function Implementation:OnEvent(event, ...)
-	if not (self.events[event] and self:IsShown()) then return end
+	if(not (self.events[event] and self:IsShown())) then return end
 
-	for key, func in next, self.events[event] do
+	for key, func in pairs(self.events[event]) do
 		func(key, event, ...)
 	end
 end
@@ -239,25 +235,30 @@ end
 	@callback OnInit
 ]]
 function Implementation:Init()
-	if not self.notInited then return end
+	if(not self.notInited) then return end
 	
 	 -- initialization of bags in combat taints the itembuttons within - Lars Norberg
-	if _G.InCombatLockdown() then
+	if (InCombatLockdown()) then
+		local L = LibStub("gLocale-1.0"):GetLocale(addon, true)
+		if (L) then
+			UIErrorsFrame:AddMessage(L["Can't initialize bags while engaged in combat."], 1.0, 0.82, 0.0, 1.0)
+			UIErrorsFrame:AddMessage(L["Please exit combat then re-open the bags!"], 1.0, 0.82, 0.0, 1.0)
+		end
+
 		return
 	end
 	
 	self.notInited = nil
 
-	if self.OnInit then self:OnInit() end
+	if(self.OnInit) then self:OnInit() end
 
-	if not self.buttonClass then
+	if(not self.buttonClass) then
 		self:SetDefaultItemButtonClass()
 	end
 
 	self:RegisterEvent("BAG_UPDATE", self, self.BAG_UPDATE)
 	self:RegisterEvent("BAG_UPDATE_COOLDOWN", self, self.BAG_UPDATE_COOLDOWN)
 	self:RegisterEvent("ITEM_LOCK_CHANGED", self, self.ITEM_LOCK_CHANGED)
-	self:RegisterEvent("GET_ITEM_INFO_RECEIVED", self, self.GET_ITEM_INFO_RECEIVED)
 	self:RegisterEvent("PLAYERBANKSLOTS_CHANGED", self, self.PLAYERBANKSLOTS_CHANGED)
 	self:RegisterEvent("PLAYERREAGENTBANKSLOTS_CHANGED", self, self.PLAYERREAGENTBANKSLOTS_CHANGED)
 	self:RegisterEvent("UNIT_QUEST_LOG_CHANGED", self, self.UNIT_QUEST_LOG_CHANGED)
@@ -295,105 +296,72 @@ end
 local defaultItem = cargBags:NewItemTable()
 
 --[[!
-	Fires a complete BAG_UPDATE on the next update
-]]
-do
-	local scheduled = false
-	local function scheduler()
-		scheduled:OnEvent("BAG_UPDATE")
-		scheduled = false
-	end
-	function Implementation:UpdateAll()
-		if not scheduled then
-			scheduled = self
-			_G.C_Timer.After(0, scheduler)
-		end
-	end
-end
-
---[[!
 	Fetches the itemInfo of the item in bagID/slotID into the table
 	@param bagID <number>
 	@param slotID <number>
 	@param i <table> [optional]
 	@return i <table>
 ]]
-local infoGather = {}
-do
-	local function GatherItemInfo(bagID, slotID, i)
-		i = i or defaultItem
-		_G.wipe(i)
+local ilvlTypes = {
+	[GetItemClassInfo(4)] = true,	--Armor
+	[GetItemClassInfo(2)] = true,	--Weapon
+}
+local ilvlSubTypes = {
+	[GetItemSubClassInfo(3,11)] = true	--Artifact Relic
+}
+local EMPspell = GetSpellInfo(227907)
+function Implementation:GetItemInfo(bagID, slotID, i)
+	i = i or defaultItem
+	for k in pairs(i) do i[k] = nil end
 
-		i.bagID = bagID
-		i.slotID = slotID
+	i.bagID = bagID
+	i.slotID = slotID
 
-		local clink = _G.GetContainerItemLink(bagID, slotID)
-		i.texture, i.count, i.locked, i.quality, i.readable = _G.GetContainerItemInfo(bagID, slotID)
-		i.cdStart, i.cdFinish, i.cdEnable = _G.GetContainerItemCooldown(bagID, slotID)
+	local clink = GetContainerItemLink(bagID, slotID)
 
-		if clink then
-			local texture
+	if(clink) then
+		i.texture, i.count, i.locked, i.quality, i.readable = GetContainerItemInfo(bagID, slotID)
+		i.cdStart, i.cdFinish, i.cdEnable = GetContainerItemCooldown(bagID, slotID)
+		i.isQuestItem, i.questID, i.questActive = GetContainerItemQuestInfo(bagID, slotID)
+		i.isInSet, i.setName = GetContainerItemEquipmentSetInfo(bagID, slotID)
 
-			-- /dump GetContainerItemLink(0, 1):match("H(%w+):([%-?%d:]+)")
-			local linkType, itemString = clink:match("H(%w+):([%-?%d:]+)")
-			if linkType == "battlepet" then
-				if not(L) then
-					L = cargBags:GetLocalizedTypes()
-				end
-				local itemType, petType = L[_G.LE_ITEM_CLASS_BATTLEPET]
-				local speciesID, level, breedQuality, _, _, _, battlePetID = strsplit(":", itemString)
-				i.name, texture, petType, i.creatureID, _, _, i.isWild, i.canBattle, i.isTradeable, i.isUnique, i.isObtainable, i.displayID = _G.C_PetJournal.GetPetInfoBySpeciesID(speciesID)
-				i.link = clink
-				i.rarity = tonumber(breedQuality) or 0
-				i.minLevel = tonumber(level) or 0
-				i.type = itemType.name
-				i.subType = itemType[petType-1]
-				i.texture = i.texture or texture
-				i.typeID = _G.LE_ITEM_CLASS_BATTLEPET
-				i.subTypeID = petType
-				i.id = tonumber(battlePetID)
-
-				i.speciesID = tonumber(speciesID) or 0
+		-- *edits by Lars "Goldpaw" Norberg for WoW 5.0.4 (MoP)
+		-- last return value here, "texture", doesn't show for battle pets
+		local texture
+		i.name, i.link, i.rarity, i.level, i.minLevel, i.type, i.subType, i.stackCount, i.equipLoc, texture, i.sellPrice  = GetItemInfo(clink)
+		-- get the first link return because otherwise ilvl for artifacts will bug
+		i.link = clink
+		-- get the actual item level for items we want it to be shown
+		if (i.type and (ilvlTypes[i.type] or i.subType and ilvlSubTypes[i.subType])) and i.level > 0 then
+			if i.rarity == LE_ITEM_QUALITY_ARTIFACT then
+				-- for artifact weapons, GetItemInfo returns the actual ilvl
 			else
-				local itemID = strsplit(":", itemString)
-				i.id = tonumber(itemID) or 0
-
-				i.isQuestItem, i.questID, i.questActive = _G.GetContainerItemQuestInfo(bagID, slotID)
-				i.isInSet, i.setName = _G.GetContainerItemEquipmentSetInfo(bagID, slotID)
-
-				i.name, i.link, i.rarity, i.level, i.minLevel, i.type, i.subType, i.stackCount, i.equipLoc, texture, i.sellPrice, i.typeID, i.subTypeID = _G.GetItemInfo(clink)
-				if i.type == BAG_FILTER_CONSUMABLES and  i.subTypeID == 8 then 
-				   _, _, i.Zartifact = LibItemLevel:GetItemInfo(clink)
-				   --print(i.link, i.type, i.subType, i.typeID, i.subTypeID, i.Zartifact) 
-				end
-				
-				if not i.name then
-					i.id, i.type, i.subType, i.equipLoc, texture, i.typeID, i.subTypeID = _G.GetItemInfoInstant(clink)
-					if not infoGather[i.id] then infoGather[i.id] = {} end
-					if not infoGather[i.id][i.bagID] then infoGather[i.id][i.bagID] = {} end
-					if not infoGather[i.id][i.bagID][i.slotID] then
-						infoGather[i.id][i.bagID][i.slotID] = i
-					end
-				end
-				i.texture = i.texture or texture
+				i.level = ItemUpgradeInfo:GetUpgradedItemLevel(i.link)
 			end
 		end
-
-		ItemInfo[bagID][slotID] = i
-		return i
-	end
-
-	function Implementation:GetItemInfo(bagID, slotID, reset)
-		if not ItemInfo[bagID] then
-			ItemInfo[bagID] = {}
+		-- get the item spell to determine if the item is an Artifact Power boosting item
+		if GetItemSpell(clink) == EMPspell then
+			i.type = ARTIFACT_POWER
 		end
-
-		if reset or (ItemInfo[bagID][slotID] and not ItemInfo[bagID][slotID].typeID) or (not ItemInfo[bagID][slotID]) then
-			return GatherItemInfo(bagID, slotID, ItemInfo[bagID][slotID] or {})
-		else
-			return ItemInfo[bagID][slotID]
+		-- texture
+		i.texture = i.texture or texture
+		-- battle pet info must be extracted from the itemlink
+		if (clink:find("battlepet")) then
+			if not(L) then
+				L = cargBags:GetLocalizedTypes()
+			end
+			local data, name = strmatch(clink, "|H(.-)|h(.-)|h")
+			local  _, _, level, rarity, _, _, _, id = strmatch(data, "(%w+):(%d+):(%d+):(%d+):(%d+):(%d+):(%d+):(%d+)")
+			i.type = L.ItemClass["Battle Pets"]
+			i.rarity = tonumber(rarity) or 0
+			i.id = tonumber(id) or 0
+			i.name = name
+			i.minLevel = level
+			i.link = clink
 		end
+		--print("GetItemInfo:", i.isInSet, i.setName, i.name)
 	end
+	return i
 end
 
 --[[!
@@ -402,13 +370,13 @@ end
 	@param slotID <number>
 ]]
 function Implementation:UpdateSlot(bagID, slotID)
-	local item = self:GetItemInfo(bagID, slotID, true)
+	local item = self:GetItemInfo(bagID, slotID)
 	local button = self:GetButton(bagID, slotID)
 	local container = self:GetContainerForItem(item, button)
 
-	if container then
-		if button then
-			if container ~= button.container then
+	if(container) then
+		if(button) then
+			if(container ~= button.container) then
 				button.container:RemoveButton(button)
 				container:AddButton(button)
 			end
@@ -419,7 +387,7 @@ function Implementation:UpdateSlot(bagID, slotID)
 		end
 
 		button:Update(item)
-	elseif button then
+	elseif(button) then
 		button.container:RemoveButton(button)
 		self:SetButton(bagID, slotID, nil)
 		button:Free()
@@ -434,20 +402,20 @@ local closed
 ]]
 function Implementation:UpdateBag(bagID)
 	local numSlots
-	if closed then
-		numSlots, closed = 0, nil
+	if(closed) then
+		numSlots, closed = 0
 	else
-		numSlots = _G.GetContainerNumSlots(bagID)
+		numSlots = GetContainerNumSlots(bagID)
 	end
 	local lastSlots = self.bagSizes[bagID] or 0
 	self.bagSizes[bagID] = numSlots
 
-	for slotID = 1, numSlots do
+	for slotID=1, numSlots do
 		self:UpdateSlot(bagID, slotID)
 	end
-	for slotID = numSlots + 1, lastSlots do
+	for slotID=numSlots+1, lastSlots do
 		local button = self:GetButton(bagID, slotID)
-		if button then
+		if(button) then
 			button.container:RemoveButton(button)
 			self:SetButton(bagID, slotID, nil)
 			button:Free()
@@ -462,13 +430,13 @@ end
 	@callback Container:OnBagUpdate(bagID, slotID)
 ]]
 function Implementation:BAG_UPDATE(event, bagID, slotID)
-	if bagID and slotID then
+	if(bagID and slotID) then
 		self:UpdateSlot(bagID, slotID)
-	elseif bagID then
+	elseif(bagID) then
 		self:UpdateBag(bagID)
 	else
-		for id = -3, 11 do
-			self:UpdateBag(id)
+		for bagID = -2, 11 do
+			self:UpdateBag(bagID)
 		end
 	end
 end
@@ -487,18 +455,18 @@ end
 	@param bagID <number> [optional]
 ]]
 function Implementation:BAG_UPDATE_COOLDOWN(event, bagID)
-	if bagID then
-		for slotID = 1, _G.GetContainerNumSlots(bagID) do
+	if(bagID) then
+		for slotID=1, GetContainerNumSlots(bagID) do
 			local button = self:GetButton(bagID, slotID)
-			if button then
-				local item = self:GetItemInfo(bagID, slotID, true)
+			if(button) then
+				local item = self:GetItemInfo(bagID, slotID)
 				button:UpdateCooldown(item)
 			end
 		end
 	else
-		for id, container in next, self.contByID do
-			for i, button in next, container.buttons do
-				local item = self:GetItemInfo(button.bagID, button.slotID, true)
+		for id, container in pairs(self.contByID) do
+			for i, button in pairs(container.buttons) do
+				local item = self:GetItemInfo(button.bagID, button.slotID)
 				button:UpdateCooldown(item)
 			end
 		end
@@ -511,28 +479,12 @@ end
 	@param slotID <number> [optional]
 ]]
 function Implementation:ITEM_LOCK_CHANGED(event, bagID, slotID)
-	if not slotID then return end
+	if(not slotID) then return end
 
 	local button = self:GetButton(bagID, slotID)
-	if button then
-		local item = self:GetItemInfo(bagID, slotID, true)
+	if(button) then
+		local item = self:GetItemInfo(bagID, slotID)
 		button:UpdateLock(item)
-	end
-end
-
---[[!
-	Fired when item information is recived from the server after a GetItemInfo call
-	@param itemID <number>
-]]
-function Implementation:GET_ITEM_INFO_RECEIVED(event, itemID)
-	local itemInfo = infoGather[itemID]
-	if itemInfo then
-		for bagID, bag in next, itemInfo do
-			for slotID, item in next, bag do
-				self:BAG_UPDATE(event, bagID, slotID)
-			end
-		end
-		infoGather[itemID] = nil
 	end
 end
 
@@ -542,11 +494,11 @@ end
 	@param slotID <number> [optional]
 ]]
 function Implementation:PLAYERBANKSLOTS_CHANGED(event, bagID, slotID)
-	if bagID <= _G.NUM_BANKGENERIC_SLOTS then
+	if(bagID <= NUM_BANKGENERIC_SLOTS) then
 		slotID = bagID
 		bagID = -1
 	else
-		bagID = bagID - _G.NUM_BANKGENERIC_SLOTS
+		bagID = bagID - NUM_BANKGENERIC_SLOTS
 	end
 
 	self:BAG_UPDATE(event, bagID, slotID)
@@ -567,8 +519,8 @@ end
 	Fired when the quest log of a unit changes
 ]]
 function Implementation:UNIT_QUEST_LOG_CHANGED(event)
-	for id, container in next, self.contByID do
-		for i, button in next, container.buttons do
+	for id, container in pairs(self.contByID) do
+		for i, button in pairs(container.buttons) do
 			local item = self:GetItemInfo(button.bagID, button.slotID)
 			button:UpdateQuest(item)
 		end

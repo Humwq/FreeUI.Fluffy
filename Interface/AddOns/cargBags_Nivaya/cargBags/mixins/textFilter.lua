@@ -25,59 +25,49 @@ DESCRIPTION
 DEPENDENCIES:
 	base-add/filters.sieve.lua
 ]]
-local _, ns = ...
-
--- Lua Globals --
-local _G = _G
-
+local addon, ns = ...
 local cargBags = ns.cargBags
 local Container = cargBags.classes.Container
-local FilterSet = cargBags.classes.FilterSet
+local Implementation = cargBags.classes.Implementation
 
 local defaultFilters = {
-	n = function(i, arg)
-		return i.name and i.name:lower():match(arg)
-	end,
-	t = function(i, arg)
-		return (i.type and i.type:lower():match(arg)) or (i.subType and i.subType:lower():match(arg)) or (i.equipLoc and i.equipLoc:lower():match(arg))
-	end,
-	b = function(i, arg)
-		return i.bindOn and i.bindOn:match(arg)
-	end,
-	q = function(i, arg)
-		return i.rarity == _G.tonumber(arg)
-	end,
-	bag = function(i, arg)
-		return i.bagID == _G.tonumber(arg)
-	end,
-	quest = function(i, arg)
-		return i.isQuestItem
-	end,
+	n = function(i, arg) return i.name and i.name:lower():match(arg) end,
+	t = function(i, arg) return (i.type and i.type:lower():match(arg)) or (i.subType and i.subType:lower():match(arg)) or (i.equipLoc and i.equipLoc:lower():match(arg)) end,
+	b = function(i, arg) return i.bindOn and i.bindOn:match(arg) end,
+	q = function(i, arg) return i.rarity == tonumber(arg) end,
+	bag = function(i, arg) return i.bagID == tonumber(arg) end,
+	quest = function(i, arg) return i.isQuestItem end,
 
 	_default = "n",
 }
 
 --[[
-	Parses a text for filters and stores them in the FilterSet
+	Parses a text for filters and stores them in a filterTable
 	@param text <string> the text filter
+	@param filters <FilterSet> table to store resulting filters in [optional]
 	@param textFilters <table> table of text filters to parse from [optional]
 
-	@note Basically works like this: text ----textFilters----> FilterSet  
+	@note Basically works like this: text ----textFilters----> filters,filterInfo	
 ]]
-function FilterSet:SetTextFilter(text, filters, textFilters)
+function Implementation:ParseTextFilter(text, filters, textFilters)
+	filters = filters or cargBags.classes.FilterSet:New()
 	textFilters = textFilters or defaultFilters
 
 	for match in text:gmatch("[^,;&]+") do
 		local mod, type, value = match:trim():match("^(!?)(.-)[:=]?([^:=]*)$")
-		mod = mod == "!" and -1 or true
-		if value and type ~= "" and textFilters[type] then
-			self:SetExtended(textFilters[type], value:lower(), mod)
-		elseif value and type == "" and textFilters._default then
+		mod = (mod == "!" and -1) or true
+		if(value and type ~= "" and textFilters[type]) then
+			filters:SetExtended(textFilters[type], value:lower(), mod)
+		elseif(value and type == "" and textFilters._default) then
 			local name = textFilters._default
-			self:SetExtended(textFilters[name], value:lower(), mod)
+			filters:SetExtended(textFilters[name], value:lower(), mod)
 		end
 	end
+
+	return filters
 end
+
+Container.ParseTextFilter = Implementation.ParseTextFilter
 
 --[[!
 	Applies a text filter to the container, for convenience
@@ -85,8 +75,7 @@ end
 	@param textFilters <table> a table of textFilters to parse from [optional]
 ]]
 function Container:SetTextFilter(text, textFilters)
-	self.filters = self.filters or FilterSet:New()
-	self.filters:SetTextFilter(text, textFilters)
+	self.filters = self:ParseTextFilter(text, self.filters, textFilters)
 end
 
 cargBags.textFilters = defaultFilters

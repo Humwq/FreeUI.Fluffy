@@ -15,6 +15,7 @@ C.themes["Blizzard_DeathRecap"] = function()
 	DeathRecapFrame.Divider:Hide()
 
 	F.CreateBD(DeathRecapFrame)
+	F.CreateSD(DeathRecapFrame)
 	F.Reskin(_G.select(8, DeathRecapFrame:GetChildren())) -- bottom close button has no parentKey
 	F.ReskinClose(DeathRecapFrame.CloseXButton)
 

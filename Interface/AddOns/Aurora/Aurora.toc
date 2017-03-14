@@ -2,12 +2,13 @@
 ## Title: |cffF5FFFAFreeUI|r.|cffFF34B3Fluffy|r |cff00AFFFAurora|r
 ## Notes: Minimalistic window theme.
 ## Author: Haleth/Lightsword (Modified by Dostoyevsky@烈焰峰)
-## Version: 70100.04
+## Version: 70100.05
 
 aurora.lua
 #gui.lua
 
 AddOns\Blizzard_AchievementUI.lua
+AddOns\Blizzard_AdventureMap.lua
 AddOns\Blizzard_ArchaeologyUI.lua
 AddOns\Blizzard_ArtifactUI.lua
 AddOns\Blizzard_AuctionUI.lua
@@ -32,6 +33,8 @@ AddOns\Blizzard_ItemSocketingUI.lua
 AddOns\Blizzard_ItemUpgradeUI.lua
 AddOns\Blizzard_LookingForGuildUI.lua
 AddOns\Blizzard_MacroUI.lua
+AddOns\Blizzard_ObliterumUI.lua
+AddOns\Blizzard_OrderHallUI.lua
 AddOns\Blizzard_PVPUI.lua
 AddOns\Blizzard_QuestChoice.lua
 AddOns\Blizzard_RaidUI.lua

@@ -75,7 +75,6 @@
 	<Script file="Tooltip\IDCard.lua"/>
 	<Script file="Tooltip\IDTip.lua"/>
 	<Script file="Tooltip\ilvlSpec.lua"/>
-	<Script file="Tooltip\KeystoneAffix.lua"/>
 
 	<!-- InfoBar -->
 	<Script file="InfoBar\MenuBar.lua"/>
@@ -102,6 +101,7 @@
 	<Script file="Miscellaneous\tekkrush.lua"/>
 	<Script file="Miscellaneous\ThreatMeter.lua"/>
 	<Script file="Miscellaneous\UIFader.lua"/>
+	<Script file="Miscellaneous\Misc.lua"/>
 
 	<!-- Skins -->
 	<Script file="Skins\Bugger.lua"/>

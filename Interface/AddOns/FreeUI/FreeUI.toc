@@ -2,7 +2,7 @@
 ## Title: |cffF5FFFAFreeUI|r.|cffFF34B3Fluffy|r
 ## Notes: Minimalistic user interface.
 ## Author: Haleth/Lightsword (Modified by Dostoyevsky@烈焰峰)
-## Version: 70100.04
+## Version: 70100.05
 ## OptionalDeps: Clique, FreeUI_Options, MyRolePlay, oUF
 ## SavedVariables: FreeUIGlobalConfig, SavedBindings, CTradeSkillDB
 ## SavedVariablesPerCharacter: FreeUIConfig

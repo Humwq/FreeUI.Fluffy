@@ -10,14 +10,11 @@ local realm = GetRealmName()
 local class = select(2, UnitClass("player"))
 
 local unitframeFont
-if C.appearance.fontUseChinesePixelFont then
+if C.unitframes.pixelFontCN then
 	unitframeFont = C.fontCN.pixel
 else
 	unitframeFont = C.fontCN.standard
 end
-
-local CBinterrupt = C.unitframes.castbarColorInterrupt
-local CBnormal = C.unitframes.castbarColorNormal
 
 local colors = setmetatable({
 	power = setmetatable({
@@ -67,6 +64,9 @@ local partyWidthHealer = C.unitframes.party_width_healer
 local partyHeightHealer = C.unitframes.party_height_healer
 local raidWidth = C.unitframes.raid_width
 local raidHeight = C.unitframes.raid_height
+
+local CBinterrupt = C.unitframes.castbarColorInterrupt
+local CBnormal = C.unitframes.castbarColorNormal
 
 -- [[ Initialize / load layout option ]]
 
@@ -146,7 +146,7 @@ local updateNameColour = function(self, unit)
 	if UnitIsUnit(unit, "target") then
 		self.Text:SetTextColor(.1, .7, 1)
 	elseif UnitIsDead(unit) then
-		self.Text:SetTextColor(.6, .6, .6)
+		self.Text:SetTextColor(.7, .2, .1)
 	else
 		self.Text:SetTextColor(1, 1, 1)
 	end
@@ -159,7 +159,7 @@ local updateNameColourAlt = function(self)
 		if UnitIsUnit(frame.unit, "target") then
 			frame.Text:SetTextColor(.1, .7, 1)
 		elseif UnitIsDead(frame.unit) then
-			frame.Text:SetTextColor(.6, .6, .6)
+			frame.Text:SetTextColor(.7, .2, .1)
 		else
 			frame.Text:SetTextColor(1, 1, 1)
 		end
@@ -416,13 +416,13 @@ local function PostUpdateClassIcon(element, cur, max, diff, powerType, event)
 			local ClassIcon = element[index]
 			local maxWidth, gap = playerWidth, 1
 
-			if(max == 5 or max == 8) then
+			if(max == 5 or max == 10) then
 				ClassIcon:SetWidth(((maxWidth / 5) - ((4 * gap) / 5)))
 			else
 				ClassIcon:SetWidth(((maxWidth / max) - (((max-1) * gap) / max)))
 			end
 
-			if(max == 8) then
+			if(max == 10) then
 				-- Rogue anticipation
 				if(index == 6) then
 					ClassIcon:ClearAllPoints()
@@ -586,13 +586,13 @@ local Shared = function(self, unit, isSingle)
 		AltPowerBar:SetWidth(playerWidth)
 		AltPowerBar:SetHeight(altPowerHeight)
 		AltPowerBar:SetStatusBarTexture(C.media.texture)
-		AltPowerBar:SetPoint("BOTTOM", oUF_FreePlayer, 0, -C.unitframes.power_height-2)
+		AltPowerBar:SetPoint("BOTTOM", oUF_FreePlayer, 0, -C.unitframes.power_height-3)
 
 		local abd = CreateFrame("Frame", nil, AltPowerBar)
 		abd:SetPoint("TOPLEFT", -1, 1)
 		abd:SetPoint("BOTTOMRIGHT", 1, -1)
 		abd:SetFrameLevel(AltPowerBar:GetFrameLevel()-1)
-		F.CreateBD(abd)
+		F.CreateBD(abd, .5)
 
 		AltPowerBar.Text = F.CreateFS(AltPowerBar, C.FONT_SIZE_NORMAL, "RIGHT")
 		AltPowerBar.Text:SetPoint("BOTTOM", oUF_FreePlayer, "TOP", 0, 3)
@@ -619,9 +619,8 @@ local Shared = function(self, unit, isSingle)
 
 	if C.unitframes.portrait then
 		local Portrait = CreateFrame('PlayerModel', nil, self)
-		Portrait:SetFrameLevel(1)
-		Portrait:SetPoint("TOPLEFT", 1, 0)
-		Portrait:SetPoint("BOTTOMRIGHT", -1, 1)
+		Portrait:SetAllPoints(Health)
+		Portrait:SetFrameLevel(Health:GetFrameLevel() - 1)
 		Portrait:SetAlpha(.1)
 		Portrait.PostUpdate = PostUpdatePortrait
 		self.Portrait = Portrait
@@ -819,6 +818,27 @@ local UnitSpecific = {
 		Castbar.Width = self:GetWidth()
 
 		Spark:SetHeight(self.Health:GetHeight())
+
+		local Auras = CreateFrame("Frame", nil, self)
+		Auras:SetPoint("TOPLEFT", self, "BOTTOMLEFT", 0, -3)
+		Auras.initialAnchor = "TOPLEFT"
+		Auras["growth-x"] = "RIGHT"
+		Auras["growth-y"] = "DOWN"
+		Auras['spacing-x'] = 3
+		Auras['spacing-y'] = -3
+
+		Auras.numDebuffs = 4
+		Auras.numBuffs = 4
+		Auras:SetHeight(100)
+		Auras:SetWidth(petWidth)
+		Auras.size = 20
+
+		Auras.gap = true
+
+		self.Auras = Auras
+
+		Auras.PostCreateIcon = PostCreateIcon
+		Auras.PostUpdateIcon = PostUpdateIcon
 	end,
 
 	player = function(self, ...)
@@ -928,32 +948,24 @@ local UnitSpecific = {
 			PvP.Override = UpdatePvP
 		end
 
-		-- Debuffs
-
-		-- We position these later on
-		local Debuffs = CreateFrame("Frame", nil, self)
-		Debuffs.initialAnchor = "TOPRIGHT"
-		Debuffs["growth-x"] = "LEFT"
-		Debuffs["growth-y"] = "DOWN"
-		Debuffs['spacing-x'] = 3
-		Debuffs['spacing-y'] = 3
-
-		Debuffs:SetHeight(60)
-		Debuffs:SetWidth(playerWidth)
-		Debuffs.num = 16
-		Debuffs.size = 26
-
-		self.Debuffs = Debuffs
-		Debuffs.PostUpdateIcon = PostUpdateIcon
-
-
 		-- DK runes
 
 		if class == "DEATHKNIGHT" and C.classmod.classResource then
 			local runes = CreateFrame("Frame", nil, self)
 			runes:SetWidth(playerWidth)
 			runes:SetHeight(2)
-			runes:SetPoint("BOTTOMRIGHT", Debuffs, "TOPRIGHT", 0, 3)
+			-- runes:SetPoint("BOTTOMRIGHT", Debuffs, "TOPRIGHT", 0, 3)
+
+			local function moveAnchor()
+				if self.AltPowerBar:IsShown() then
+					runes:SetPoint('TOPLEFT', self, 'BOTTOMLEFT', 0, -7)
+				else
+					runes:SetPoint('TOPLEFT', self, 'BOTTOMLEFT', 0, -3)
+				end
+			end
+			self.AltPowerBar:HookScript("OnShow", moveAnchor)
+			self.AltPowerBar:HookScript("OnHide", moveAnchor)
+			moveAnchor()
 
 			F.CreateBDFrame(runes)
 
@@ -991,7 +1003,7 @@ local UnitSpecific = {
 			ClassIcons.UpdateTexture = UpdateClassIconTexture
 			ClassIcons.PostUpdate = PostUpdateClassIcon
 
-			for index = 1, 8 do
+			for index = 1, 10 do
 				local ClassIcon = CreateFrame('Frame', nil, self)
 				ClassIcon:SetHeight(C.unitframes.classPower_height)
 
@@ -1007,7 +1019,16 @@ local UnitSpecific = {
 				if(index > 1) then
 					ClassIcon:SetPoint('LEFT', ClassIcons[index - 1], 'RIGHT', 1, 0)
 				else
-					ClassIcon:SetPoint('TOPLEFT', self, 'BOTTOMLEFT', 0, -3)
+					local function moveAnchor()
+						if self.AltPowerBar:IsShown() then
+							ClassIcon:SetPoint('TOPLEFT', self, 'BOTTOMLEFT', 0, -7)
+						else
+							ClassIcon:SetPoint('TOPLEFT', self, 'BOTTOMLEFT', 0, -3)
+						end
+					end
+					self.AltPowerBar:HookScript("OnShow", moveAnchor)
+					self.AltPowerBar:HookScript("OnHide", moveAnchor)
+					moveAnchor()
 				end
 
 				local Texture = ClassIcon:CreateTexture(nil, 'BORDER', nil, index > 5 and 1 or 0)
@@ -1017,35 +1038,8 @@ local UnitSpecific = {
 				ClassIcons[index] = ClassIcon
 			end
 			self.ClassIcons = ClassIcons
+			
 		end
-
-		-- position class icon / alt power / debuff
-		local function moveDebuffsAnchors()
-			if (self.SpecialPowerBar and self.SpecialPowerBar:IsShown()) or self.ClassIcons then
-				if self.AltPowerBar:IsShown() then
-					Debuffs:SetPoint("TOPRIGHT", self, "BOTTOMRIGHT", 0, -(9 + altPowerHeight))
-				else
-					Debuffs:SetPoint("TOPRIGHT", self, "BOTTOMRIGHT", 0, -8)
-				end
-			else
-				if self.AltPowerBar:IsShown() then
-					Debuffs:SetPoint("TOPRIGHT", self, "BOTTOMRIGHT", 0, -(4 + altPowerHeight))
-				else
-					Debuffs:SetPoint("TOPRIGHT", self, "BOTTOMRIGHT", 0, -3)
-				end
-			end
-		end
-
-		self.AltPowerBar:HookScript("OnShow", moveDebuffsAnchors)
-		self.AltPowerBar:HookScript("OnHide", moveDebuffsAnchors)
-
-		if self.SpecialPowerBar then
-			self.SpecialPowerBar:HookScript("OnShow", moveDebuffsAnchors)
-			self.SpecialPowerBar:HookScript("OnHide", moveDebuffsAnchors)
-		end
-
-		moveDebuffsAnchors()
-
 
 		-- Status indicator
 
@@ -1126,12 +1120,15 @@ local UnitSpecific = {
 			Castbar.Text:SetDrawLayer("ARTWORK")
 
 			local IconFrame = CreateFrame("Frame", nil, Castbar)
+			IconFrame:SetPoint("TOPRIGHT", self, "TOPLEFT", -4, 0)
+			IconFrame:SetHeight(24)
+			IconFrame:SetWidth(24)
+
+			F.CreateSD(IconFrame)
 
 			local Icon = IconFrame:CreateTexture(nil, "OVERLAY")
 			Icon:SetAllPoints(IconFrame)
 			Icon:SetTexCoord(.08, .92, .08, .92)
-
-			F.CreateSD(IconFrame)
 
 			Castbar.Icon = Icon
 
@@ -1141,11 +1138,10 @@ local UnitSpecific = {
 			self.Iconbg:SetTexture(C.media.backdrop)
 
 			Castbar:SetStatusBarTexture(C.media.texture)
-			--Castbar:SetStatusBarColor(219/255, 0, 11/255)
 			Castbar:SetWidth(C.unitframes.target_castbar_width)
 			Castbar:SetHeight(C.unitframes.castbarHeight)
 			Castbar:SetPoint(unpack(C.unitframes.target_castbar))
-			Castbar.Text:SetPoint("BOTTOM", Castbar, "TOP", 0, 4)
+			Castbar.Text:SetPoint("TOP", Castbar, "BOTTOM", 0, -4)
 
 			if GetLocale() == "zhCN" or GetLocale() == "zhTW" then
 				Castbar.Text:SetFont(unpack(unitframeFont))
@@ -1154,8 +1150,6 @@ local UnitSpecific = {
 			local sf = Castbar:CreateTexture(nil, "OVERLAY")
 			sf:SetVertexColor(.5, .5, .5, .5)
 			Castbar.SafeZone = sf
-			IconFrame:SetPoint("RIGHT", Castbar, "LEFT", -4, 0)
-			IconFrame:SetSize(14, 14)
 
 			local bg = CreateFrame("Frame", nil, Castbar)
 			bg:SetPoint("TOPLEFT", -1, 1)
@@ -1165,35 +1159,15 @@ local UnitSpecific = {
 			F.CreateSD(bg, 5, 0, 0, 0, .8, -2)
 		end
 
-		local tt = CreateFrame("Frame", nil, self)
-		tt:SetPoint("BOTTOMRIGHT", self, "TOPRIGHT", 0, 7 + C.appearance.fontSizeNormal + (C.unitframes.targettarget and 10 or 0))
-		tt:SetWidth(80)
-		tt:SetHeight(12)
-
-		local ttt = F.CreateFS(tt, C.FONT_SIZE_NORMAL, "RIGHT")
-		ttt:SetPoint("BOTTOMRIGHT", self, "TOPRIGHT", C.unitframes.targettarget_width + 5, 2)
-		ttt:SetFont(unpack(unitframeFont))
-		ttt:SetWidth(80)
-		ttt:SetHeight(12)
-
-		tt:RegisterEvent("UNIT_TARGET")
-		tt:RegisterEvent("PLAYER_TARGET_CHANGED")
-		tt:SetScript("OnEvent", function()
-			if(UnitName("targettarget")==UnitName("player")) then
-				ttt:SetText("> YOU <")
-				ttt:SetTextColor(1, 0, 0)
-			else
-				ttt:SetText(UnitName"targettarget")
-				ttt:SetTextColor(1, 1, 1)
-			end
-		end)
-
-
 		local Name = F.CreateFS(self)
 		Name:SetPoint("BOTTOMLEFT", PowerText, "BOTTOMRIGHT")
 		Name:SetPoint("RIGHT", self)
-		Name:SetFont(unpack(unitframeFont))
-		Name:SetWidth(80)
+
+		if GetLocale() == "zhCN" or GetLocale() == "zhTW" then
+			Name:SetFont(unpack(unitframeFont))
+		end
+
+		Name:SetWidth(C.unitframes.targettarget_width)
 		Name:SetJustifyH("RIGHT")
 		Name:SetTextColor(1, 1, 1)
 		Name:SetWordWrap(false)
@@ -1202,10 +1176,10 @@ local UnitSpecific = {
 		self.Name = Name
 
 		local Auras = CreateFrame("Frame", nil, self)
-		Auras:SetPoint("TOPLEFT", self, "BOTTOMLEFT", 0, -4)
-		Auras.initialAnchor = "TOPLEFT"
+		Auras:SetPoint("BOTTOMLEFT", self, "TOPLEFT", 0, 20)
+		Auras.initialAnchor = "BOTTOMLEFT"
 		Auras["growth-x"] = "RIGHT"
-		Auras["growth-y"] = "DOWN"
+		Auras["growth-y"] = "UP"
 		Auras['spacing-x'] = 3
 		Auras['spacing-y'] = -5
 
@@ -1213,7 +1187,7 @@ local UnitSpecific = {
 		Auras.numBuffs = C.unitframes.num_target_buffs
 		Auras:SetHeight(500)
 		Auras:SetWidth(targetWidth)
-		Auras.size = 26
+		Auras.size = 30
 
 		Auras.gap = true
 
@@ -1282,6 +1256,33 @@ local UnitSpecific = {
 
 		self.RaidIcon:ClearAllPoints()
 		self.RaidIcon:SetPoint("LEFT", self, "RIGHT", 3, 0)
+
+		local tt = CreateFrame("Frame", nil, self)
+		tt:SetPoint("BOTTOMRIGHT", self, "TOPRIGHT", 0, 3)
+		tt:SetWidth(C.unitframes.targettarget_width)
+
+		local ttt = F.CreateFS(tt, C.FONT_SIZE_NORMAL, "RIGHT")
+		ttt:SetPoint("BOTTOMRIGHT", self, "TOPRIGHT", 0, 3)
+
+		if GetLocale() == "zhCN" or GetLocale() == "zhTW" then
+			ttt:SetFont(unpack(unitframeFont))
+		end
+
+		ttt:SetWordWrap(false)
+		ttt:SetWidth(C.unitframes.targettarget_width)
+
+		tt:RegisterEvent("UNIT_TARGET")
+		tt:RegisterEvent("PLAYER_TARGET_CHANGED")
+		tt:SetScript("OnEvent", function()
+			if(UnitName("targettarget")==UnitName("player")) then
+				ttt:SetText("> YOU <")
+				ttt:SetTextColor(1, 0, 0)
+			else
+				ttt:SetText(UnitName"targettarget")
+				ttt:SetTextColor(1, 1, 1)
+			end
+		end)
+
 	end,
 
 	focus = function(self, ...)
@@ -1325,7 +1326,7 @@ local UnitSpecific = {
 			Castbar:SetWidth(C.unitframes.focus_castbar_width)
 			Castbar:SetHeight(C.unitframes.castbarHeight)
 			Castbar:SetPoint(unpack(C.unitframes.focus_castbar))
-			Castbar.Text:SetPoint("TOP", Castbar, "BOTTOM", 0, -4)
+			Castbar.Text:SetPoint("BOTTOM", Castbar, "TOP", 0, 4)
 
 			if GetLocale() == "zhCN" or GetLocale() == "zhTW" then
 				Castbar.Text:SetFont(unpack(unitframeFont))
@@ -1345,35 +1346,16 @@ local UnitSpecific = {
 			F.CreateSD(bg, 5, 0, 0, 0, .8, -2)
 		end
 
-		local tt = CreateFrame("Frame", nil, self)
-		tt:SetPoint("BOTTOMRIGHT", self, "TOPRIGHT", 0, 7 + C.appearance.fontSizeNormal + (C.unitframes.focustarget and 10 or 0))
-		tt:SetWidth(C.unitframes.focus_width)
-		tt:SetHeight(12)
-
-		local ttt = F.CreateFS(tt, C.FONT_SIZE_NORMAL, "RIGHT")
-		ttt:SetPoint("BOTTOMRIGHT", self, "TOPRIGHT", C.unitframes.focus_width + 5, 2)
-		ttt:SetFont(unpack(unitframeFont))
-		ttt:SetWidth(C.unitframes.focus_width)
-		ttt:SetHeight(12)
-
-		tt:RegisterEvent("UNIT_TARGET")
-		tt:RegisterEvent("PLAYER_FOCUS_CHANGED")
-		tt:SetScript("OnEvent", function()
-			if(UnitName("focustarget")==UnitName("player")) then
-				ttt:SetText("> YOU <")
-				ttt:SetTextColor(1, 0, 0)
-			else
-				ttt:SetText(UnitName"focustarget")
-				ttt:SetTextColor(1, 1, 1)
-			end
-		end)
-
 		local Name = F.CreateFS(self)
 		Name:SetPoint("BOTTOMLEFT", self, "TOPLEFT", 0, 3)
-		Name:SetFont(unpack(unitframeFont))
+
+		if GetLocale() == "zhCN" or GetLocale() == "zhTW" then
+			Name:SetFont(unpack(unitframeFont))
+		end
+
 		Name:SetWidth(C.unitframes.focus_width)
-		Name:SetHeight(12)
-		Name:SetJustifyH"LEFT"
+		Name:SetJustifyH"RIGHT"
+		Name:SetWordWrap(false)
 		Name:SetTextColor(1, 1, 1)
 
 		self:Tag(Name, '[name]')
@@ -1381,13 +1363,13 @@ local UnitSpecific = {
 
 		local Debuffs = CreateFrame("Frame", nil, self)
 		Debuffs:SetPoint("TOPLEFT", self, "BOTTOMLEFT", 0, -4)
-		Debuffs.initialAnchor = "BOTTOMLEFT"
+		Debuffs.initialAnchor = "TOPLEFT"
 		Debuffs["growth-x"] = "RIGHT"
-		Debuffs["growth-y"] = "UP"
+		Debuffs["growth-y"] = "DOWN"
 		Debuffs["spacing-x"] = 3
-		Debuffs:SetHeight(18)
+		Debuffs:SetHeight(20)
 		Debuffs:SetWidth(focusWidth)
-		Debuffs.size = 26
+		Debuffs.size = 20
 		Debuffs.num = 3
 		self.Debuffs = Debuffs
 		self.Debuffs.onlyShowPlayer = true
@@ -1413,6 +1395,31 @@ local UnitSpecific = {
 
 		self.RaidIcon:ClearAllPoints()
 		self.RaidIcon:SetPoint("LEFT", self, "RIGHT", 3, 0)
+
+		local tt = CreateFrame("Frame", nil, self)
+		tt:SetPoint("BOTTOMLEFT", self, "TOPLEFT", 0, 3)
+
+		local ttt = F.CreateFS(tt, C.FONT_SIZE_NORMAL, "LEFT")
+		ttt:SetPoint("BOTTOMLEFT", self, "TOPLEFT", 0, 3)
+
+		if GetLocale() == "zhCN" or GetLocale() == "zhTW" then
+			ttt:SetFont(unpack(unitframeFont))
+		end
+
+		ttt:SetWordWrap(false)
+		ttt:SetWidth(C.unitframes.focustarget_width)
+
+		tt:RegisterEvent("UNIT_TARGET")
+		tt:RegisterEvent("PLAYER_FOCUS_CHANGED")
+		tt:SetScript("OnEvent", function()
+			if(UnitName("focustarget")==UnitName("player")) then
+				ttt:SetText("> YOU <")
+				ttt:SetTextColor(1, 0, 0)
+			else
+				ttt:SetText(UnitName"focustarget")
+				ttt:SetTextColor(1, 1, 1)
+			end
+		end)
 	end,
 
 
@@ -1436,10 +1443,15 @@ local UnitSpecific = {
 		Health.value = HealthPoints
 
 		local Name = F.CreateFS(self, C.FONT_SIZE_NORMAL, "LEFT")
-		Name:SetFont(unpack(unitframeFont))
-		Name:SetPoint("BOTTOMLEFT", self, "TOPLEFT", 0, 4)
+		
+		if GetLocale() == "zhCN" or GetLocale() == "zhTW" then
+			Name:SetFont(unpack(unitframeFont))
+		end
+
+		Name:SetPoint("BOTTOMLEFT", self, "TOPLEFT", 0, 3)
 		Name:SetWidth((bossWidth / 2) + 10)
-		Name:SetHeight(12)
+		Name:SetWordWrap(false)
+
 		self:Tag(Name, '[name]')
 		self.Name = Name
 
@@ -1456,7 +1468,7 @@ local UnitSpecific = {
 		F.CreateBD(abd)
 
 		AltPowerBar.Text = F.CreateFS(AltPowerBar, C.FONT_SIZE_NORMAL, "CENTER")
-		AltPowerBar.Text:SetPoint("CENTER", self, "TOP", 0, 6)
+		AltPowerBar.Text:SetPoint("BOTTOM", Health, "TOP", 0, 3)
 
 		AltPowerBar:SetScript("OnValueChanged", function(_, value)
 			local min, max = AltPowerBar:GetMinMaxValues()
@@ -1478,7 +1490,11 @@ local UnitSpecific = {
 		Spark:SetHeight(self.Health:GetHeight())
 
 		Castbar.Text = F.CreateFS(self)
-		Castbar.Text:SetFont(unpack(unitframeFont))
+
+		if GetLocale() == "zhCN" or GetLocale() == "zhTW" then
+			Castbar.Text:SetFont(unpack(unitframeFont))
+		end
+
 		Castbar.Text:SetDrawLayer("ARTWORK")
 		Castbar.Text:SetAllPoints(Health)
 
@@ -1568,7 +1584,10 @@ local UnitSpecific = {
 		Name:SetPoint("BOTTOMLEFT", self, "TOPLEFT", 0, 2)
 		Name:SetWidth(110)
 		Name:SetHeight(12)
-		Name:SetFont(unpack(unitframeFont))
+
+		if GetLocale() == "zhCN" or GetLocale() == "zhTW" then
+			Name:SetFont(unpack(unitframeFont))
+		end
 
 		self:Tag(Name, '[name]')
 		self.Name = Name
@@ -1637,7 +1656,6 @@ do
 
 		local Text = F.CreateFS(Health, C.FONT_SIZE_NORMAL, "CENTER")
 		Text:SetPoint("CENTER", 1, 0)
-		Text:SetFont(unpack(unitframeFont))
 
 		self.Text = Text
 
@@ -1645,6 +1663,11 @@ do
 
 		Health:SetHeight(partyHeight - powerHeight - 1)
 		if C.unitframes.partyNameAlways then
+			
+			if GetLocale() == "zhCN" or GetLocale() == "zhTW" then
+				Text:SetFont(unpack(unitframeFont))
+			end
+
 			self:Tag(Text, '[free:name]')
 		elseif C.unitframes.partyMissingHealth then
 			self:Tag(Text, '[free:missinghealth]')
@@ -1868,12 +1891,12 @@ oUF:Factory(function(self)
 		'showParty', true,
 		'showPlayer', true,
 		'showSolo', false,
-		'xoffset', 4,
-		'yoffset', 4,
-		'maxColumns', 1,
-		'unitsperColumn', 5,
-		'columnSpacing', 4,
-		'point', "BOTTOM",
+		'xoffset', 3,
+		'yoffset', 3,
+		'maxColumns', 5,
+		'unitsperColumn', 1,
+		'columnSpacing', 3,
+		'point', "LEFT",
 		'columnAnchorPoint', "LEFT",
 		'groupBy', 'ASSIGNEDROLE',
 		'groupingOrder', 'DAMAGER,HEALER,TANK',
@@ -1888,16 +1911,17 @@ oUF:Factory(function(self)
 	local raid = self:SpawnHeader(nil, nil, "raid",
 		'showParty', false,
 		'showRaid', true,
-		'xoffset', 5,
-		'yOffset', 6,
-		'point', "BOTTOM",
+		'xoffset', 3,
+		'yOffset', -3,
+		'point', "LEFT",
 		'groupFilter', '1,2,3,4,5,6,7,8',
 		'groupingOrder', '1,2,3,4,5,6,7,8',
-		'groupBy', 'GROUP',
+		'groupBy', 'ASSIGNEDROLE',
 		'maxColumns', 8,
 		'unitsPerColumn', 5,
-		'columnSpacing', 6,
-		'columnAnchorPoint', "RIGHT",
+		'columnSpacing', 3,
+		'columnAnchorPoint', "TOP",
+		"sortMethod", "INDEX",
 		'oUF-initialConfigFunction', ([[
 			self:SetHeight(%d)
 			self:SetWidth(%d)
@@ -1905,6 +1929,18 @@ oUF:Factory(function(self)
 	)
 
 	raid:SetPoint(unpack(raidPos))
+
+	-- 限制团队框体只显示4个队伍20名成员
+	if C.unitframes.limitRaidSize then
+		raid:SetAttribute("groupFilter", "1,2,3,4")
+	end
+	F.AddOptionsCallback("unitframes", "limitRaidSize", function()
+		if C.unitframes.limitRaidSize then
+			raid:SetAttribute("groupFilter", "1,2,3,4")
+		else
+			raid:SetAttribute("groupFilter", "1,2,3,4,5,6,7,8")
+		end
+	end)
 
 	local raidToParty = CreateFrame("Frame")
 

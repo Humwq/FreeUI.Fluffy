@@ -27,10 +27,6 @@ DEPENDENCIES
 local _, ns = ...
 local cargBags = ns.cargBags
 
--- Lua Globals --
-local _G = _G
-local next = _G.next
-
 local Implementation = cargBags.classes.Implementation
 
 --[[!
@@ -39,7 +35,7 @@ local Implementation = cargBags.classes.Implementation
 	@returns container <Container>
 ]]
 function Implementation:GetContainerForItem(item)
-	return (item.bagID and self.bagToContainer) and self.bagToContainer[item.bagID]
+	return item.bagID and self.bagToContainer and self.bagToContainer[item.bagID]
 end
 
 local Container = cargBags.classes.Container
@@ -49,16 +45,16 @@ local Container = cargBags.classes.Container
 	@param bags <BagType>
 ]]
 function Container:SetBags(bags)
-	if cargBags.ParseBags then
+	if(cargBags.ParseBags) then
 		bags = cargBags:ParseBags(bags)
 	end
 
-	if not bags then return end
+	if(not bags) then return end
 
 	self.implementation.bagToContainer = self.implementation.bagToContainer or {}
 	local b2c = self.implementation.bagToContainer
 
-	for i, bagID in next, bags do
+	for i, bagID in pairs(bags) do
 		b2c[bagID] = self
 	end
 end

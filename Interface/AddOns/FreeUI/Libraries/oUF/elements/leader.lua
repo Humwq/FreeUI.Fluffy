@@ -2,6 +2,36 @@ local F, C = unpack(select(2, ...))
 
 if not C.unitframes.enable then return end
 
+--[[ Element: Leader Icon
+
+ Toggles visibility based on the units leader status.
+
+ Widget
+
+ Leader - Any UI widget.
+
+ Notes
+
+ The default leader icon will be applied if the UI widget is a texture and
+ doesn't have a texture or color defined.
+
+ Examples
+
+   -- Position and size
+   local Leader = self:CreateTexture(nil, "OVERLAY")
+   Leader:SetSize(16, 16)
+   Leader:SetPoint("BOTTOM", self, "TOP")
+   
+   -- Register it with oUF
+   self.Leader = Leadera
+
+ Hooks
+
+ Override(self) - Used to completely override the internal update function.
+                  Removing the table key entry will make the element fall-back
+                  to its internal function again.
+]]
+
 local parent, ns = ...
 local oUF = ns.oUF
 
@@ -12,7 +42,8 @@ local Update = function(self, event)
 	end
 
 	local unit = self.unit
-	if (UnitInParty(unit) or UnitInRaid(unit)) and UnitIsGroupLeader(unit) then
+	local isLeader = (UnitInParty(unit) or UnitInRaid(unit)) and UnitIsGroupLeader(unit)
+	if(isLeader) then
 		leader:Show()
 	else
 		leader:Hide()
@@ -51,6 +82,7 @@ end
 local Disable = function(self)
 	local leader = self.Leader
 	if(leader) then
+		leader:Hide()
 		self:UnregisterEvent("PARTY_LEADER_CHANGED", Path)
 		self:UnregisterEvent("GROUP_ROSTER_UPDATE", Path)
 	end

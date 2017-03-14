@@ -303,7 +303,7 @@ hooksecurefunc("WhoList_Update", function()
 			nameText:SetTextColor(c.r, c.g, c.b)
 			classText:SetTextColor(c.r, c.g, c.b)
 			levelText:SetText(diffColor[level] .. level)
-			variableText:SetText(columnTable[Lib_UIDropDownMenu_GetSelectedID(WhoFrameDropDown)])
+			variableText:SetText(columnTable[UIDropDownMenu_GetSelectedID(WhoFrameDropDown)])
 		end
 	end
 end)
